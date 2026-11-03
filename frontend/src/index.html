@@ -1,86 +1,122 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Velmora — Relógios que marcam o seu tempo</title>
-<link rel="icon" type="image/png" href="assets/logo-mark.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles/style.css">
-</head>
-<body>
-
-<header class="topbar">
-  <div class="wrap">
-    <a href="#" class="brand" aria-label="Velmora, página inicial">
-      <img src="img/logo-mark.png" alt="" width="40" height="40">
-      <span>Velmora</span>
-    </a>
-    <nav class="nav" aria-label="Principal">
-      <a href="#produtos" data-filter="all">Novidades</a>
-      <a href="#produtos" data-filter="male">Masculino</a>
-      <a href="#produtos" data-filter="female">Feminino</a>
-      <a href="#garantia">Garantia</a>
-    </nav>
-    <button class="cart-btn" id="cartButton" type="button">Carrinho (<span id="cartCount">0</span>)</button>
-  </div>
-</header>
-
-<main>
-  <section class="hero">
-    <div class="wrap">
-      <div>
-        <h1>Relógios que marcam o seu tempo.</h1>
-        <hr class="rule">
-        <p>Automáticos, de quartzo e esportivos, com revisão técnica e 5 anos de garantia. Frete grátis para todo o Brasil.</p>
-
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Velmora — Relógios que marcam o seu tempo</title>
+    <link rel="icon" type="image/png" href="assets/logo-mark.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="wrap">
+        <a href="#" class="brand" aria-label="Velmora, página inicial">
+          <img src="img/logo-mark.png" alt="" width="40" height="40" />
+          <span>Velmora</span>
+        </a>
+        <nav class="nav" aria-label="Principal">
+          <a href="#produtos" data-filter="all">Novidades</a>
+          <a href="#produtos" data-filter="male">Masculino</a>
+          <a href="#produtos" data-filter="female">Feminino</a>
+          <a href="#garantia">Garantia</a>
+        </nav>
+        <button class="cart-btn" id="cartButton" type="button">
+          Carrinho (<span id="cartCount">0</span>)
+        </button>
       </div>
-      <div class="dial dial--hero" id="heroDial" role="img" aria-label="Relógio analógico mostrando a hora atual de Brasília">
-        <div class="name">VELMORA</div>
-        <div class="hand h" id="hourHand"></div>
-        <div class="hand m" id="minuteHand"></div>
-        <div class="hand s" id="secondHand"></div>
-        <div class="pin"></div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="wrap">
+          <div>
+            <h1>Relógios que marcam o seu tempo.</h1>
+            <hr class="rule" />
+            <p>
+              Automáticos, de quartzo e esportivos, com revisão técnica e 5 anos
+              de garantia. Frete grátis para todo o Brasil.
+            </p>
+          </div>
+          <div
+            class="dial dial--hero"
+            id="heroDial"
+            role="img"
+            aria-label="Relógio analógico mostrando a hora atual de Brasília"
+          >
+            <div class="name">VELMORA</div>
+            <div class="hand h" id="hourHand"></div>
+            <div class="hand m" id="minuteHand"></div>
+            <div class="hand s" id="secondHand"></div>
+            <div class="pin"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="produtos">
+        <div class="wrap">
+          <div class="head">
+            <h2>Novidades</h2>
+          </div>
+          <div class="filters" role="group" aria-label="Filtrar por público">
+            <button type="button" class="filter is-active" data-filter="all">
+              Todos
+            </button>
+            <button type="button" class="filter" data-filter="male">
+              Masculino
+            </button>
+            <button type="button" class="filter" data-filter="female">
+              Feminino
+            </button>
+          </div>
+          <div class="grid" id="productGrid" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="promise" id="garantia">
+        <div class="wrap">
+          <div>
+            <h3>5 anos de garantia</h3>
+            <p>
+              Cobertura do mecanismo e da caixa, com revisão gratuita no
+              primeiro ano.
+            </p>
+          </div>
+          <div>
+            <h3>30 dias para trocar</h3>
+            <p>Não serviu no pulso? Devolvemos o valor ou trocamos o modelo.</p>
+          </div>
+          <div>
+            <h3>Envio segurado</h3>
+            <p>Cada relógio sai em embalagem rígida, com código de rastreio.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="wrap">
+        <img
+          src="img/logo-velmora.png"
+          alt="Velmora — relógios que marcam o seu tempo"
+          width="700"
+          height="518"
+        />
+        <div class="footer-info">
+          <span>© 2026 Velmora Relógios</span>
+          <span>contato@velmora.example</span>
+        </div>
       </div>
-    </div>
-  </section>
+    </footer>
 
-  <section id="produtos">
-    <div class="wrap">
-      <div class="head">
-        <h2>Novidades</h2>
- 
-      </div>
-      <div class="filters" role="group" aria-label="Filtrar por público">
-        <button type="button" class="filter is-active" data-filter="all">Todos</button>
-        <button type="button" class="filter" data-filter="male">Masculino</button>
-        <button type="button" class="filter" data-filter="female">Feminino</button>
-      </div>
-      <div class="grid" id="productGrid" aria-live="polite"></div>
-    </div>
-  </section>
-
-  <section class="promise" id="garantia">
-    <div class="wrap">
-      <div><h3>5 anos de garantia</h3><p>Cobertura do mecanismo e da caixa, com revisão gratuita no primeiro ano.</p></div>
-      <div><h3>30 dias para trocar</h3><p>Não serviu no pulso? Devolvemos o valor ou trocamos o modelo.</p></div>
-      <div><h3>Envio segurado</h3><p>Cada relógio sai em embalagem rígida, com código de rastreio.</p></div>
-    </div>
-  </section>
-</main>
-
-<footer>
-  <div class="wrap">
-    <img src="img/logo-velmora.png" alt="Velmora — relógios que marcam o seu tempo" width="700" height="518">
-    <div class="footer-info">
-      <span>© 2026 Velmora Relógios</span>
-      <span>contato@velmora.example</span>
-    </div>
-  </div>
-</footer>
-
-<script src="script.js"></script>
-</body>
+    <script type="module" src="script.js"></script>
+  </body>
 </html>
