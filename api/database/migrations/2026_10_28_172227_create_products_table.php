@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->text('description')->nullable();
+            $table->foreignId('category_id')
+                ->constrained();
             $table->string('brand');
             $table->foreignId('characteristics_id')
                 ->constrained();
@@ -23,6 +25,7 @@ return new class extends Migration
             $table->string('image_url')->nullable();
             $table->boolean('active')->default(true);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

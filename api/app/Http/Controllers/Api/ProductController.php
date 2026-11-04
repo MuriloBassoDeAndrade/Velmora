@@ -8,7 +8,7 @@ use App\Http\Requests\UpdateProductRequest;
 use App\Http\Resources\ProductResource;
 use App\Services\ProductService;
 
-class BookController extends Controller
+class ProductController extends Controller
 {
     public function __construct(
         private ProductService $ProductService
@@ -25,7 +25,7 @@ class BookController extends Controller
     {
         $product = $this->ProductService->create($request->validated());
 
-        return new ProductResource($book);
+        return new ProductResource($product);
     }
 
     public function show(int $id)
