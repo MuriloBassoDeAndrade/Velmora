@@ -6,9 +6,9 @@ services:
       - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: bookshelf
-      MYSQL_USER: bookshelf
-      MYSQL_PASSWORD: bookshelf
+      MYSQL_DATABASE: Velmora
+      MYSQL_USER: Velmora
+      MYSQL_PASSWORD: Velmora
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
@@ -28,9 +28,9 @@ services:
       DB_CONNECTION: mysql
       DB_HOST: mysql
       DB_PORT: 3306
-      DB_DATABASE: bookshelf
-      DB_USERNAME: bookshelf
-      DB_PASSWORD: bookshelf
+      DB_DATABASE: Velmora
+      DB_USERNAME: Velmora
+      DB_PASSWORD: Velmora
     expose:
       - "8000"
     volumes:
@@ -46,7 +46,7 @@ services:
   frontend:
     container_name: frontend
     build:
-      context: ./front
+      context: ./frontend
       dockerfile: Dockerfile
     expose:
       - "80"
@@ -54,7 +54,7 @@ services:
   proxy:
     container_name: proxy
     build:
-      context: ./proxy
+      context: ./Proxy
       dockerfile: Dockerfile
     depends_on:
       api:

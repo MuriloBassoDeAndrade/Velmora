@@ -12,3 +12,6 @@ tests
 *.log
 .vscode
 .idea
+bootstrap/cache/*.php
+vendor
+node_modules

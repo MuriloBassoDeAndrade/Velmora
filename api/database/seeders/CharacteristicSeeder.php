@@ -9,7 +9,7 @@ use Illuminate\Database\Seeder;
  * Fichas técnicas de relógios reais (Casio, Seiko, Orient e Tissot).
  *
  * Os IDs são fixos (1 a 7) para o ProductSeeder poder referenciá-los em
- * `characteristics_id`. Campos que o fabricante não publica ficam como null.
+ * `characteristics_id`.
  */
 class CharacteristicSeeder extends Seeder
 {
@@ -37,7 +37,7 @@ class CharacteristicSeeder extends Seeder
                 'warranty' => '1 ano (garantia do fabricante)',
                 'illumination_type' => 'Ponteiros e marcadores com áreas fluorescentes',
                 'watch_dimensions' => '48,5 x 44,2 x 12,1 mm',
-                'dial_dimensions' => null,
+                'dial_dimensions' => '33 mm',
                 'thickness' => '12,1 mm',
                 'weight' => '92 g',
                 'strap_lug_width' => '22 mm',
@@ -63,7 +63,7 @@ class CharacteristicSeeder extends Seeder
                 'warranty' => 'Garantia do fabricante (confira o prazo no certificado)',
                 'illumination_type' => 'LumiBrite nos ponteiros e índices',
                 'watch_dimensions' => '42,5 mm de diâmetro x 46,0 mm (lug to lug) x 13,4 mm',
-                'dial_dimensions' => null,
+                'dial_dimensions' => '31 mm',
                 'thickness' => '13,4 mm',
                 'weight' => '170 g',
                 'strap_lug_width' => '22 mm',
@@ -89,9 +89,9 @@ class CharacteristicSeeder extends Seeder
                 'warranty' => '1 ano (garantia internacional Orient)',
                 'illumination_type' => 'Sem material luminescente',
                 'watch_dimensions' => '42 mm de diâmetro x 48,2 mm (lug to lug) x 11,8 mm',
-                'dial_dimensions' => null,
+                'dial_dimensions' => '37 mm',
                 'thickness' => '11,8 mm',
-                'weight' => null,
+                'weight' => '65 g',
                 'strap_lug_width' => '22 mm',
             ],
 
@@ -115,7 +115,7 @@ class CharacteristicSeeder extends Seeder
                 'warranty' => '2 anos (garantia Tissot)',
                 'illumination_type' => 'Super-LumiNova nos ponteiros',
                 'watch_dimensions' => '40 mm de diâmetro x 10,93 mm de espessura',
-                'dial_dimensions' => null,
+                'dial_dimensions' => '32 mm',
                 'thickness' => '10,93 mm',
                 'weight' => '138 g',
                 'strap_lug_width' => '12 mm',
@@ -141,9 +141,9 @@ class CharacteristicSeeder extends Seeder
                 'warranty' => '2 anos (garantia Tissot)',
                 'illumination_type' => 'Super-LumiNova nos ponteiros',
                 'watch_dimensions' => '35 mm de diâmetro x 39 mm (lug to lug) x 10,93 mm',
-                'dial_dimensions' => null,
+                'dial_dimensions' => '28 mm',
                 'thickness' => '10,93 mm',
-                'weight' => null,
+                'weight' => '104 g',
                 'strap_lug_width' => '12 mm',
             ],
 
@@ -167,7 +167,7 @@ class CharacteristicSeeder extends Seeder
                 'warranty' => '1 ano (garantia do fabricante)',
                 'illumination_type' => 'Luz de LED',
                 'watch_dimensions' => '33,5 x 28,6 x 8,6 mm',
-                'dial_dimensions' => null,
+                'dial_dimensions' => '21 x 15 mm',
                 'thickness' => '8,6 mm',
                 'weight' => '36 g',
                 'strap_lug_width' => '14 mm',
@@ -193,10 +193,10 @@ class CharacteristicSeeder extends Seeder
                 'warranty' => '1 ano (garantia do fabricante)',
                 'illumination_type' => 'Sem iluminação',
                 'watch_dimensions' => '31,5 x 28,5 x 6,6 mm',
-                'dial_dimensions' => null,
+                'dial_dimensions' => '24 mm',
                 'thickness' => '6,6 mm',
-                'weight' => null,
-                'strap_lug_width' => null,
+                'weight' => '51 g',
+                'strap_lug_width' => '14 mm',
             ],
         ];
 

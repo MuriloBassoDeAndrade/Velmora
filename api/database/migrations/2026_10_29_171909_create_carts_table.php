@@ -14,7 +14,6 @@ return new class extends Migration
     {
         Schema::create('carts', function (Blueprint $table) {
             $table->id();
-            // Sem cascadeOnDelete: o MySQL não aceita CHECK em coluna usada em ação referencial de FK.
             $table->foreignId('user_id')
                 ->nullable()
                 ->unique()
@@ -25,7 +24,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // O carrinho pertence a um usuário OU a um visitante, nunca aos dois.
+
         DB::statement('ALTER TABLE carts ADD CONSTRAINT carts_owner_check
             CHECK ((user_id IS NOT NULL) <> (guest_token IS NOT NULL))');
     }
