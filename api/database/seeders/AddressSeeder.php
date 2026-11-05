@@ -22,9 +22,21 @@ class AddressSeeder extends Seeder
         ];
 
         foreach ($addresses as [$user, $recipient, $street, $number, $complement, $neighborhood, $city, $state, $cep]) {
+
             Address::updateOrCreate(
-                ['user_id' => $user->id, 'recipient_name' => $recipient, 'street' => $street, 'number' => $number],
-                compact('complement', 'neighborhood', 'city', 'state', 'cep') + ['user_id' => $user->id, 'recipient_name' => $recipient, 'street' => $street, 'number' => $number]
+                [
+                    'user_id' => $user->id,
+                    'recipient_name' => $recipient,
+                    'street' => $street,
+                    'number' => $number,
+                ],
+                [
+                    'complement' => $complement,
+                    'neighborhood' => $neighborhood,
+                    'city' => $city,
+                    'state' => $state,
+                    'cep' => $cep,
+                ]
             );
         }
     }
