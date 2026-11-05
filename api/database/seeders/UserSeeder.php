@@ -26,7 +26,7 @@ class UserSeeder extends Seeder
         foreach ($users as $data) {
             User::updateOrCreate(
                 ['email' => $data['email']],
-                ['name' => $data['name'], 'password' => Hash::make('Velmora123!'), 'role' => 'customer']
+                ['name' => $data['name'], 'password' => Hash::make('Velmora123!'), ]
             );
         }
     }

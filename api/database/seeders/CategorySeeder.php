@@ -13,6 +13,7 @@ class CategorySeeder extends Seeder
             ['name' => 'Esportivo', 'slug' => 'esportivo'],
             ['name' => 'Social', 'slug' => 'social'],
             ['name' => 'Casual', 'slug' => 'casual'],
+            ['name' => 'Mergulho', 'slug' => 'mergulho']
         ] as $data) {
             Category::updateOrCreate(['slug' => $data['slug']], $data);
         }

@@ -76,3 +76,11 @@ Todas as contas usam a senha `Velmora123!`.
 | Cliente | `ana@velmora.com` | `Velmora123!` |
 | Cliente | `bruno@velmora.com` | `Velmora123!` |
 | Cliente | `carla@velmora.com` | `Velmora123!` |
+
+### Dados dos seeders
+
+O frete usado pelos pedidos do seeder é fixo e igual a **R$ 29,90** em todos os pedidos, incluindo pedidos cancelados.
+
+Os pedidos do seeder ficam distribuídos entre Ana, Bruno e Carla e cobrem os status `pending_payment`, `paid`, `shipped`, `delivered` e `cancelled`. Somente `paid`, `shipped` e `delivered` possuem pagamento registrado.
+
+Recrie sempre o ambiente de desenvolvimento com `php artisan migrate:fresh --seed` para evitar registros duplicados ao executar novamente os seeders de carrinhos ou pedidos.
