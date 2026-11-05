@@ -57,3 +57,22 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Dados de desenvolvimento
+
+Para recriar o banco de desenvolvimento com dados de demonstração:
+
+```bash
+php artisan migrate:fresh --seed
+```
+
+### Credenciais de teste
+
+Todas as contas usam a senha `Velmora123!`.
+
+| Perfil | E-mail | Senha |
+|---|---|---|
+| Administrador | `admin@velmora.com` | `Velmora123!` |
+| Cliente | `ana@velmora.com` | `Velmora123!` |
+| Cliente | `bruno@velmora.com` | `Velmora123!` |
+| Cliente | `carla@velmora.com` | `Velmora123!` |

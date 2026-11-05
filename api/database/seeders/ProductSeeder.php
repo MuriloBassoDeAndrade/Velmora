@@ -5,14 +5,7 @@ namespace Database\Seeders;
 use App\Models\Product;
 use Illuminate\Database\Seeder;
 
-/**
- * Relógios reais. Cada produto aponta para a ficha técnica criada no
- * CharacteristicSeeder (IDs 1 a 7).
- *
- * ATENÇÃO: `price` e `stock` são valores de referência para teste.
- * Ajuste ao preço e ao estoque reais da loja. `image_url` fica null até
- * você ter fotos com direito de uso.
- */
+
 class ProductSeeder extends Seeder
 {
     public function run(): void
