@@ -9,6 +9,11 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Order extends Model
 {
+    public const STATUS_PENDING_PAYMENT = 'pending_payment';
+    public const STATUS_PAID = 'paid';
+    public const STATUS_SHIPPED = 'shipped';
+    public const STATUS_DELIVERED = 'delivered';
+    public const STATUS_CANCELLED = 'cancelled';
     protected $fillable = [
         'user_id',
         'address_id',
