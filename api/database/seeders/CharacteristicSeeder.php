@@ -5,12 +5,7 @@ namespace Database\Seeders;
 use App\Models\Characteristic;
 use Illuminate\Database\Seeder;
 
-/**
- * Fichas técnicas de relógios reais (Casio, Seiko, Orient e Tissot).
- *
- * Os IDs são fixos (1 a 7) para o ProductSeeder poder referenciá-los em
- * `characteristics_id`.
- */
+
 class CharacteristicSeeder extends Seeder
 {
     public function run(): void
