@@ -7,3 +7,4 @@ node_modules
 .idea
 dockerfile
 *.local
+*.zip
