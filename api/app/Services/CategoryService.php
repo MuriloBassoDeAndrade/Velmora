@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use app\models\category;
+use App\Models\Category;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\ValidationException;
 

@@ -21,8 +21,7 @@ class CategoryController extends Controller
 
     public function index()
     {
-     return CategoryResource::collection(
-        $this->categoryService->getAll());
+     return CategoryResource::collection($this->categoryService->getAll());
     }
 
     public function store(StoreCategoryRequest $request)
@@ -40,14 +39,14 @@ class CategoryController extends Controller
 
     public function update(UpdateCategoryRequest $request, int $id)
     {
-        
+        $data = $request->validated();
+        $category = $this->categoryService->update($id, $data);
+        return new CategoryResource($category);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+    public function destroy(int $id)
     {
-        //
+        $this->categoryService->delete($id);
+        return response()->noContent();
     }
 }
