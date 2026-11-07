@@ -20,47 +20,55 @@ class OrderSeeder extends Seeder
     {
         DB::transaction(function () {
 
-            // Busca os endereços e agrupa por usuário.
+            // Busca e agrupa os endereços por usuário.
             $addresses = Address::orderBy('id')
                 ->get()
                 ->groupBy('user_id')
                 ->map(fn ($items) => $items->values());
 
-            if ($addresses->isEmpty()) {
-                return;
-            }
-
-            // Pedidos de demonstração.
             $orders = [
                 [
                     'status' => Order::STATUS_PENDING_PAYMENT,
                     'customer_email' => 'ana@velmora.com',
                     'address_index' => 0,
-                    'items' => [[2, 1], [3, 2]],
+                    'items' => [
+                        ['Casio Duro MDV-106-1A', 1],
+                        ['Seiko 5 Sports SRPD55K1', 1],
+                    ],
                 ],
                 [
                     'status' => Order::STATUS_PAID,
                     'customer_email' => 'bruno@velmora.com',
                     'address_index' => 0,
-                    'items' => [[4, 1], [5, 1]],
+                    'items' => [
+                        ['Orient Bambino Version 4 FAC08003A0', 1],
+                    ],
                 ],
                 [
                     'status' => Order::STATUS_SHIPPED,
                     'customer_email' => 'carla@velmora.com',
                     'address_index' => 0,
-                    'items' => [[6, 2], [7, 1], [9, 1]],
+                    'items' => [
+                        ['Tissot PRX Powermatic 80 40 mm T137.407.11.041.00', 1],
+                        ['Tissot PRX Powermatic 80 35 mm T137.207.11.041.00', 1],
+                    ],
                 ],
                 [
                     'status' => Order::STATUS_DELIVERED,
                     'customer_email' => 'ana@velmora.com',
                     'address_index' => 1,
-                    'items' => [[8, 1], [10, 1]],
+                    'items' => [
+                        ['Casio Vintage LA680WGA-1B', 1],
+                        ['Casio LTP-1183A-7A', 1],
+                    ],
                 ],
                 [
                     'status' => Order::STATUS_CANCELLED,
                     'customer_email' => 'bruno@velmora.com',
                     'address_index' => 0,
-                    'items' => [[11, 1], [12, 1]],
+                    'items' => [
+                        ['Seiko 5 Sports SRPD55K1', 1],
+                    ],
                 ],
             ];
 
@@ -79,43 +87,37 @@ class OrderSeeder extends Seeder
 
                 $address = $userAddresses->get($data['address_index']);
 
-                // Agrupa quantidades de produtos repetidos, se houver.
-                $quantities = [];
+                // Busca os produtos solicitados.
+                $productNames = collect($data['items'])
+                    ->pluck(0)
+                    ->unique()
+                    ->values();
 
-                foreach ($data['items'] as [$productId, $quantity]) {
-                    if ($quantity <= 0) {
-                        continue;
-                    }
-
-                    $quantities[$productId] = ($quantities[$productId] ?? 0) + $quantity;
-                }
-
-                if (empty($quantities)) {
-                    continue;
-                }
-
-                // Busca os produtos e bloqueia suas linhas durante a transação.
-                $products = Product::whereIn('id', array_keys($quantities))
+                $products = Product::whereIn('name', $productNames)
                     ->lockForUpdate()
                     ->get()
-                    ->keyBy('id');
+                    ->keyBy('name');
 
                 $selectedItems = [];
                 $subtotalCents = 0;
 
-                foreach ($quantities as $productId => $quantity) {
+                // Valida todos os itens antes de criar o pedido.
+                foreach ($data['items'] as [$productName, $quantity]) {
 
-                    $product = $products->get($productId);
+                    $product = $products->get($productName);
 
                     if (
                         !$product ||
                         !$product->active ||
                         $product->stock < $quantity
                     ) {
-                        continue;
+                        $selectedItems = [];
+                        break;
                     }
 
-                    $unitPriceCents = $this->moneyToCents((string) $product->price);
+                    $unitPriceCents = $this->moneyToCents(
+                        (string) $product->price
+                    );
 
                     $selectedItems[] = [
                         'product' => $product,
@@ -125,7 +127,7 @@ class OrderSeeder extends Seeder
                     $subtotalCents += $unitPriceCents * $quantity;
                 }
 
-                // Não cria pedidos sem produtos válidos.
+                // Não cria pedidos incompletos.
                 if (empty($selectedItems)) {
                     continue;
                 }
@@ -156,13 +158,12 @@ class OrderSeeder extends Seeder
                         'quantity' => $quantity,
                     ]);
 
-                    // Pedidos cancelados não consomem estoque.
                     if ($data['status'] !== Order::STATUS_CANCELLED) {
                         $product->decrement('stock', $quantity);
                     }
                 }
 
-                // Cria pagamento para pedidos já pagos.
+                // Cria pagamento para pedidos pagos.
                 if (in_array($data['status'], [
                     Order::STATUS_PAID,
                     Order::STATUS_SHIPPED,
@@ -188,7 +189,11 @@ class OrderSeeder extends Seeder
 
     private function moneyToCents(string $value): int
     {
-        [$integer, $decimal] = array_pad(explode('.', $value, 2), 2, '0');
+        [$integer, $decimal] = array_pad(
+            explode('.', $value, 2),
+            2,
+            '0'
+        );
 
         $decimal = str_pad(substr($decimal, 0, 2), 2, '0');
 
