@@ -106,7 +106,7 @@ class ProductSeeder extends Seeder
         'category_id' => 2,
         'description' => 'Relógio masculino analógico de quartzo com mostrador branco, caixa prateada e pulseira de aço inoxidável. Possui indicador de data.',
         'price' => 279.90,
-        'stock' => 18,
+        'stock' => 0,
     ],
     [
         'name' => 'Casio MTP-V006L-7B',
@@ -125,6 +125,7 @@ class ProductSeeder extends Seeder
         'description' => 'Relógio suíço analógico de quartzo com caixa de aço inoxidável, mostrador azul e vidro de safira. Design integrado inspirado nos modelos dos anos 1970.',
         'price' => 3499.90,
         'stock' => 5,
+        'active' => false,
     ],
     [
         'name' => 'Orient Bambino RA-AC0M09E',
@@ -142,7 +143,7 @@ class ProductSeeder extends Seeder
         'category_id' => 3,
         'description' => 'Relógio casual analógico de quartzo com mostrador creme, caixa prateada e pulseira de tecido verde. Design simples e versátil.',
         'price' => 399.90,
-        'stock' => 14,
+        'stock' => 0,
     ],
     [
         'name' => 'Timex Expedition Scout T49961',
@@ -170,6 +171,7 @@ class ProductSeeder extends Seeder
         'description' => 'Relógio automático japonês com calibre 4R36, mostrador azul, caixa de aço inoxidável e pulseira metálica. Possui calendário duplo e fundo transparente.',
         'price' => 2199.90,
         'stock' => 6,
+        'active' => false,
     ],
     [
         'name' => 'Seiko 5 Sports SRPE55',
@@ -178,7 +180,7 @@ class ProductSeeder extends Seeder
         'category_id' => 3,
         'description' => 'Relógio automático masculino com mostrador preto, caixa de aço inoxidável e pulseira metálica. Possui calendário duplo e reserva de marcha de aproximadamente 41 horas.',
         'price' => 2199.90,
-        'stock' => 6,
+        'stock' => 0,
     ],
     [
         'name' => 'Casio Edifice EFV-100D-1AV',
@@ -215,6 +217,7 @@ class ProductSeeder extends Seeder
         'description' => 'Relógio esportivo analógico-digital com resistência a impactos, resistência magnética, cronômetro de alta precisão e resistência à água de 200 metros.',
         'price' => 699.90,
         'stock' => 12,
+        'active' => false,
     ],
     [
         'name' => 'Casio G-Shock DW-6900-1VH',
@@ -268,7 +271,7 @@ class ProductSeeder extends Seeder
         'category_id' => 4,
         'description' => 'Relógio analógico esportivo com visual de mergulho, mostrador preto, detalhes verdes, bisel rotativo e resistência à água de 200 metros.',
         'price' => 699.90,
-        'stock' => 9,
+        'stock' => 0,
     ],
     [
         'name' => 'Seiko 5 Sports SRPE57',
@@ -278,6 +281,7 @@ class ProductSeeder extends Seeder
         'description' => 'Relógio automático da linha Seiko 5 Sports com mostrador preto, caixa de aço inoxidável, calibre 4R36 e calendário duplo.',
         'price' => 2199.90,
         'stock' => 7,
+        'active' => false,
     ],
     [
         'name' => 'Tissot PRX T137.410.11.401.00',
