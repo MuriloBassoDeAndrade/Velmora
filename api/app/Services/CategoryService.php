@@ -38,15 +38,14 @@ class CategoryService
     {
         $category = $this->getById($id);
 
-        if(!$category->products()->exists())
+        if($category->products()->withTrashed()->exists())
             {
-                $category->delete();
-                return;
-            }
-            
-            throw ValidationException::withMessages([
+                throw ValidationException::withMessages([
                 'category' => 'Cannot delete category with associated products.'
-            ]);
-
+                ]);
+            }
+        
+            $category->delete(); 
+            
     }
 }
