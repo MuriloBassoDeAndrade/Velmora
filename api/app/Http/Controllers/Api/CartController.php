@@ -28,6 +28,7 @@ class CartController extends Controller
         $cart = $this->cartService->getCart($cart);
 
         $response = (new CartResource($cart))->response();
+        $response->setStatusCode(200);
 
         if (!$request->user()) {
             $response->headers->set('X-Guest-Token', $cart->guest_token);
@@ -56,6 +57,7 @@ class CartController extends Controller
         $cart = $this->cartService->getCart($cart);
 
         $response = (new CartResource($cart))->response();
+        $response->setStatusCode(200);
 
         if (!$request->user()) {
             $response->headers->set('X-Guest-Token', $cart->guest_token);
