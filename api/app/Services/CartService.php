@@ -75,6 +75,8 @@ class CartService
                 ->lockForUpdate()
                 ->firstOrFail();
 
+            
+
             $lockedProduct = Product::withTrashed()
                 ->whereKey($productId)
                 ->lockForUpdate()
