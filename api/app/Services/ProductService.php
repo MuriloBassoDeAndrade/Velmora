@@ -15,7 +15,13 @@ class ProductService
             ->where('active', true);
 
         if (!empty($filters['search'])) {
-            $query->where('name', 'LIKE', '%' . $filters['search'] . '%');
+        $search = str_replace(
+            ['\\', '%', '_'],
+            ['\\\\', '\\%', '\\_'],
+            $filters['search']
+            );
+
+            $query->where('name', 'LIKE', '%' . $search . '%');
         }
 
         if (!empty($filters['category'])) {
@@ -35,7 +41,7 @@ class ProductService
                 break;
 
             case 'recent':
-                $query->orderBy('created_at', 'desc');
+                $query->orderByDesc('id');
                 break;
 
             default:

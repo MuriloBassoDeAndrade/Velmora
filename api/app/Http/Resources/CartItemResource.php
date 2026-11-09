@@ -15,14 +15,27 @@ class CartItemResource extends JsonResource
             || $product->trashed()
             || !$product->active
             || $product->stock <= 0;
-        $subtotal = $product
-            ? $product->price * $this->quantity
-            : 0;
+
+        $subtotal = 0;
+
+        if (!$unavailable) {
+            $priceInCents = (int) str_replace(
+                '.',
+                '',
+                (string) $product->price
+            );
+
+            $subtotal = $priceInCents * $this->quantity;
+        }
         return [
             'id' => $this->id,
             'product_id' => $this->product_id,
             'quantity' => $this->quantity,
-            'subtotal' => number_format($subtotal, 2, '.', ''),
+            'subtotal' => sprintf(
+                '%d.%02d',
+                intdiv($subtotal, 100),
+                $subtotal % 100
+            ),
 
             'product' => $product ? [
                 'id' => $product->id,
