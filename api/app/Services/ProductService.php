@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Validation\ValidationException;
 
 class ProductService
 {
@@ -56,15 +55,8 @@ class ProductService
     
     public function delete(int $id): void
     {
-        $product = $this->getByIdAdmin($id);
+    $product = $this->getByIdAdmin($id);
 
-        if($product->orderItems()->exists())
-            {
-                throw ValidationException::withMessages([
-                'product' => 'Cannot delete a product associated with orders.'
-                ]);
-            }
-        
-            $product->delete();    
+    $product->delete();
     }
 }

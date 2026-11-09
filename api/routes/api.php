@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\CharacteristicController;
+use App\Http\Controllers\Api\CartController;
 
 // Authentication routes
 
@@ -57,3 +58,11 @@ Route::apiResource('characteristics', CharacteristicController::class)
     ->parameters(['characteristics' => 'id'])
     ->middleware(['auth:sanctum', 'admin']);
 
+// Cart routes
+Route::get('/cart', [CartController::class, 'index']);
+Route::post('/cart/items', [CartController::class, 'store']);
+Route::put('/cart/items/{id}', [CartController::class, 'update']);
+Route::delete('/cart/items/{id}', [CartController::class, 'destroy']);
+
+Route::post('/cart/merge', [CartController::class, 'merge'])
+    ->middleware('auth:sanctum');

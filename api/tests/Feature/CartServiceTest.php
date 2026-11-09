@@ -6,13 +6,13 @@ use App\Models\Cart;
 use App\Models\Category;
 use App\Models\Characteristic;
 use App\Models\Product;
+use App\Models\User;
 use App\Services\CartService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
-use App\Models\User;
-use Illuminate\Support\Facades\Hash;
 
 class CartServiceTest extends TestCase
 {
@@ -69,16 +69,21 @@ class CartServiceTest extends TestCase
         ]);
     }
 
+    private function createUser(): User
+    {
+        return User::create([
+            'name' => 'Usuário de teste',
+            'email' => 'teste@velmora.com',
+            'password' => Hash::make('password'),
+        ]);
+    }
+
     public function test_it_adds_a_product_to_the_cart(): void
     {
         $product = $this->createProduct();
         $cart = $this->createGuestCart();
 
-        $cartItem = app(CartService::class)->addItem(
-            $cart,
-            $product,
-            2
-        );
+        $cartItem = app(CartService::class)->addItem($cart,$product->id,2);
 
         $this->assertDatabaseHas('cart_items', [
             'cart_id' => $cart->id,
@@ -98,7 +103,7 @@ class CartServiceTest extends TestCase
         $cart = $this->createGuestCart();
 
         try {
-            app(CartService::class)->addItem($cart, $product, 4);
+            app(CartService::class)->addItem($cart, $product->id, 4);
 
             $this->fail('Expected ValidationException was not thrown.');
         } catch (ValidationException $exception) {
@@ -121,7 +126,7 @@ class CartServiceTest extends TestCase
 
         $this->expectException(ValidationException::class);
 
-        app(CartService::class)->addItem($cart, $product, 0);
+        app(CartService::class)->addItem($cart, $product->id, 0);
     }
 
     public function test_it_does_not_add_inactive_product(): void
@@ -134,7 +139,7 @@ class CartServiceTest extends TestCase
 
         $this->expectException(ValidationException::class);
 
-        app(CartService::class)->addItem($cart, $product, 1);
+        app(CartService::class)->addItem($cart, $product->id, 1);
     }
 
     public function test_it_does_not_add_soft_deleted_product(): void
@@ -146,7 +151,7 @@ class CartServiceTest extends TestCase
 
         $this->expectException(ValidationException::class);
 
-        app(CartService::class)->addItem($cart, $product, 1);
+        app(CartService::class)->addItem($cart, $product->id, 1);
     }
 
     public function test_it_updates_cart_item_quantity(): void
@@ -174,8 +179,8 @@ class CartServiceTest extends TestCase
 
         $this->assertEquals(5, $updatedItem->quantity);
     }
-    
-    public function test_it_does_not_update_item_with_zero_quantity(): void
+
+    public function test_it_removes_item_when_updating_with_zero_quantity(): void
     {
         $product = $this->createProduct();
         $cart = $this->createGuestCart();
@@ -185,13 +190,17 @@ class CartServiceTest extends TestCase
             'quantity' => 2,
         ]);
 
-        $this->expectException(ValidationException::class);
-
-        app(CartService::class)->updateItem(
+        $result = app(CartService::class)->updateItem(
             $cart,
             $cartItem->id,
             0
         );
+
+        $this->assertNull($result);
+
+        $this->assertDatabaseMissing('cart_items', [
+            'id' => $cartItem->id,
+        ]);
     }
 
     public function test_it_does_not_update_item_with_quantity_greater_than_stock(): void
@@ -270,7 +279,7 @@ class CartServiceTest extends TestCase
             3
         );
     }
-        
+
     public function test_it_removes_item_from_cart(): void
     {
         $product = $this->createProduct();
@@ -303,7 +312,9 @@ class CartServiceTest extends TestCase
             'quantity' => 2,
         ]);
 
-        $this->expectException(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+        $this->expectException(
+            \Illuminate\Database\Eloquent\ModelNotFoundException::class
+        );
 
         app(CartService::class)->removeItem(
             $firstCart,
@@ -315,14 +326,16 @@ class CartServiceTest extends TestCase
     {
         $cart = $this->createGuestCart();
 
-        $this->expectException(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+        $this->expectException(
+            \Illuminate\Database\Eloquent\ModelNotFoundException::class
+        );
 
         app(CartService::class)->removeItem(
             $cart,
             999999
         );
     }
-    
+
     public function test_it_merges_guest_cart_into_user_cart(): void
     {
         $user = $this->createUser();
@@ -334,11 +347,15 @@ class CartServiceTest extends TestCase
             'quantity' => 2,
         ]);
 
-        $userCart = app(CartService::class)->mergeCarts(
+        $result = app(CartService::class)->mergeCarts(
             $user,
             $guestCart,
             $guestCart->guest_token
         );
+
+        $userCart = $result['cart'];
+
+        $this->assertSame([], $result['adjustments']);
 
         $this->assertDatabaseHas('cart_items', [
             'cart_id' => $userCart->id,
@@ -350,6 +367,7 @@ class CartServiceTest extends TestCase
             'id' => $guestCart->id,
         ]);
     }
+
     public function test_it_sums_quantities_when_merging_same_products(): void
     {
         $user = $this->createUser();
@@ -381,6 +399,7 @@ class CartServiceTest extends TestCase
             'quantity' => 5,
         ]);
     }
+
     public function test_it_does_not_exceed_stock_when_merging_carts(): void
     {
         $user = $this->createUser();
@@ -403,7 +422,7 @@ class CartServiceTest extends TestCase
             'quantity' => 3,
         ]);
 
-        app(CartService::class)->mergeCarts(
+        $result = app(CartService::class)->mergeCarts(
             $user,
             $guestCart,
             $guestCart->guest_token
@@ -414,7 +433,17 @@ class CartServiceTest extends TestCase
             'product_id' => $product->id,
             'quantity' => 4,
         ]);
+
+        $this->assertSame([
+            [
+                'product_id' => $product->id,
+                'product_name' => $product->name,
+                'requested_quantity' => 5,
+                'final_quantity' => 4,
+            ],
+        ], $result['adjustments']);
     }
+
     public function test_it_ignores_inactive_products_when_merging_carts(): void
     {
         $user = $this->createUser();
@@ -430,17 +459,20 @@ class CartServiceTest extends TestCase
             'quantity' => 2,
         ]);
 
-        $userCart = app(CartService::class)->mergeCarts(
+        $result = app(CartService::class)->mergeCarts(
             $user,
             $guestCart,
             $guestCart->guest_token
         );
+
+        $userCart = $result['cart'];
 
         $this->assertDatabaseMissing('cart_items', [
             'cart_id' => $userCart->id,
             'product_id' => $product->id,
         ]);
     }
+
     public function test_it_ignores_soft_deleted_products_when_merging_carts(): void
     {
         $user = $this->createUser();
@@ -455,17 +487,20 @@ class CartServiceTest extends TestCase
             'quantity' => 2,
         ]);
 
-        $userCart = app(CartService::class)->mergeCarts(
+        $result = app(CartService::class)->mergeCarts(
             $user,
             $guestCart,
             $guestCart->guest_token
         );
+
+        $userCart = $result['cart'];
 
         $this->assertDatabaseMissing('cart_items', [
             'cart_id' => $userCart->id,
             'product_id' => $product->id,
         ]);
     }
+
     public function test_it_does_not_merge_an_invalid_guest_cart(): void
     {
         $user = $this->createUser();
@@ -480,6 +515,7 @@ class CartServiceTest extends TestCase
             (string) Str::uuid()
         );
     }
+
     public function test_it_does_not_merge_carts_with_an_invalid_guest_token(): void
     {
         $user = $this->createUser();
@@ -493,15 +529,4 @@ class CartServiceTest extends TestCase
             (string) Str::uuid()
         );
     }
-
-    private function createUser(): User
-    {
-    return User::create([
-        'name' => 'Usuário de teste',
-        'email' => 'teste@velmora.com',
-        'password' => Hash::make('password'),
-    ]);
-    }
-
-
 }
