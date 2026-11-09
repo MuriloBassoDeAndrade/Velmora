@@ -4,54 +4,43 @@ namespace App\Services;
 
 use App\Models\User;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Hash;
-use Laravel\Sanctum\PersonalAccessToken;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 
+/**
+ * Autenticação por sessão (cookie) com Laravel Sanctum no modo SPA.
+ * O navegador recebe o cookie de sessão; nenhum token é devolvido no corpo.
+ */
 class AuthService
 {
-
-    public function register(array $data): array
+    public function register(array $data): User
     {
-       $user = User::query()
-       ->create(Arr::only($data, ['name', 'email', 'password']));
-       
-       return $this->generateAuthResponse($user);
-    }
-
-    public function login(array $credentials): ?array
-    {
-
         $user = User::query()
-        ->where('email', $credentials['email'])
-        ->first();
+            ->create(Arr::only($data, ['name', 'email', 'password']));
 
-        if ($user === null) {
-            return null;
-        }
+        Auth::guard('web')->login($user);
 
-        if(!Hash::check($credentials['password'], $user->password)) {
-            return null;
-        }
-        return $this->generateAuthResponse($user);
+        return $user;
     }
 
-    public function logout(User $user): void
-{
-    $token = $user->currentAccessToken();
-
-    if ($token instanceof PersonalAccessToken) {
-        $token->delete();
-    }
-}
-
-    private function generateAuthResponse(User $user): array
+    public function login(array $credentials): ?User
     {
-         $token = $user->createToken('auth_token')->plainTextToken;
-         return [
-            'token' => $token,
-            'user' => $user,
-         ];
-     }
-     
+        $guard = Auth::guard('web');
 
+        if (!$guard->attempt(Arr::only($credentials, ['email', 'password']))) {
+            return null;
+        }
+
+        return $guard->user();
+    }
+
+    public function logout(Request $request): void
+    {
+        Auth::guard('web')->logout();
+
+        if ($request->hasSession()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
+    }
 }

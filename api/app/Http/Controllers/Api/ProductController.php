@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\ProductService;
 use App\Http\Resources\ProductResource;
 use App\Http\Requests\StoreProductRequest;
+use App\Http\Requests\UpdateProductStockRequest;
 use App\Http\Requests\UpdateProductRequest;
 use Illuminate\Http\Request;
 
@@ -61,5 +62,15 @@ class ProductController extends Controller
     {
         $this->productService->delete($id);
         return response()->noContent();
+    }
+
+    public function updateStock(UpdateProductStockRequest $request, int $id)
+    {
+        $product = $this->productService->updateStock(
+            $id,
+            $request->validated('stock')
+        );
+
+        return new ProductResource($product);
     }
 }

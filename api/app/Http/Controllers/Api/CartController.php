@@ -117,10 +117,9 @@ class CartController extends Controller
             $guestToken
         );
 
-        return response()->json([
-            'cart' => new CartResource($result['cart']),
-            'adjustments' => $result['adjustments'],
-        ]);
+        return (new CartResource($result['cart']))
+            ->additional(['adjustments' => $result['adjustments']])
+            ->response();
     }
     private function resolveCart(Request $request)
     {

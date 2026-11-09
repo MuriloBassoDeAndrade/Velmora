@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\DB;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -15,13 +16,11 @@ class ProductService
             ->where('active', true);
 
         if (!empty($filters['search'])) {
-        $search = str_replace(
-            ['\\', '%', '_'],
-            ['\\\\', '\\%', '\\_'],
-            $filters['search']
-            );
+            // Escapa % e _ (curingas do LIKE) para a busca ser literal.
+            // O caractere de escape "!" funciona igual no MySQL e no SQLite.
+            $term = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], (string) $filters['search']);
 
-            $query->where('name', 'LIKE', '%' . $search . '%');
+            $query->whereRaw("name LIKE ? ESCAPE '!'", ['%' . $term . '%']);
         }
 
         if (!empty($filters['category'])) {
@@ -95,5 +94,23 @@ class ProductService
     $product = $this->getByIdAdmin($id);
 
     $product->delete();
+    }
+
+    /**
+     * Define o estoque de um produto (inclusive inativo). Usa lock para não
+     * competir com um pedido sendo criado ao mesmo tempo.
+     */
+    public function updateStock(int $id, int $stock): Product
+    {
+        return DB::transaction(function () use ($id, $stock) {
+            $product = Product::query()
+                ->whereKey($id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $product->update(['stock' => $stock]);
+
+            return $product->load(['category', 'characteristics']);
+        }, 3);
     }
 }

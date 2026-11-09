@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Support\Money;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -11,31 +12,11 @@ class CartItemResource extends JsonResource
     {
         $product = $this->product;
 
-        $unavailable = !$product
-            || $product->trashed()
-            || !$product->active
-            || $product->stock <= 0;
-
-        $subtotal = 0;
-
-        if (!$unavailable) {
-            $priceInCents = (int) str_replace(
-                '.',
-                '',
-                (string) $product->price
-            );
-
-            $subtotal = $priceInCents * $this->quantity;
-        }
         return [
             'id' => $this->id,
             'product_id' => $this->product_id,
             'quantity' => $this->quantity,
-            'subtotal' => sprintf(
-                '%d.%02d',
-                intdiv($subtotal, 100),
-                $subtotal % 100
-            ),
+            'subtotal' => Money::format($this->subtotalCents()),
 
             'product' => $product ? [
                 'id' => $product->id,
@@ -45,7 +26,10 @@ class CartItemResource extends JsonResource
                 'active' => $product->active,
             ] : null,
 
-            'unavailable' => $unavailable,
+            // Produto removido, inativo ou sem estoque.
+            'unavailable' => $this->isUnavailable(),
+            // Disponível, mas a quantidade do carrinho passa do estoque atual.
+            'exceeds_stock' => $this->exceedsStock(),
         ];
     }
 }

@@ -7,6 +7,9 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\CharacteristicController;
 use App\Http\Controllers\Api\CartController;
+use App\Http\Controllers\Api\AddressController;
+use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 
 // Authentication routes
 
@@ -67,3 +70,31 @@ Route::delete('/cart/items/{id}', [CartController::class, 'destroy']);
 
 Route::post('/cart/merge', [CartController::class, 'merge'])
     ->middleware('auth:sanctum');
+
+// Address routes (authenticated)
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('addresses', AddressController::class)
+        ->except(['show'])
+        ->parameters(['addresses' => 'id']);
+});
+
+// Order routes (authenticated)
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/orders', [OrderController::class, 'index']);
+    Route::post('/orders', [OrderController::class, 'store']);
+    Route::get('/orders/{id}', [OrderController::class, 'show']);
+    Route::post('/orders/{id}/pay', [OrderController::class, 'pay']);
+    Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel']);
+});
+
+// Admin order routes
+
+Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+    Route::get('/orders', [AdminOrderController::class, 'index']);
+    Route::get('/orders/{id}', [AdminOrderController::class, 'show']);
+    Route::patch('/orders/{id}/status', [AdminOrderController::class, 'updateStatus']);
+    Route::patch('/products/{id}/stock', [ProductController::class, 'updateStock']);
+});
+

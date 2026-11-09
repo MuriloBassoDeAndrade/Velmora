@@ -3,45 +3,85 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Services\AuthService;
-use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\LoginRequest;
+use App\Http\Requests\RegisterRequest;
+use App\Http\Resources\CartResource;
+use App\Models\User;
+use App\Services\AuthService;
+use App\Services\CartService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
-    public function __construct(private AuthService $authService) {}
+    public function __construct(
+        private AuthService $authService,
+        private CartService $cartService,
+    ) {}
 
-    public function register(RegisterRequest $request) 
+    public function register(RegisterRequest $request): JsonResponse
     {
-        return response()->json(
-            $this->authService->register($request->validated()),
-            201
-        );
+        if (!$request->hasSession()) {
+            return $this->sessionRequired();
+        }
+
+        $user = $this->authService->register($request->validated());
+        $request->session()->regenerate();
+
+        return $this->authResponse($request, $user, 201);
     }
 
-    public function login(LoginRequest $request)
+    public function login(LoginRequest $request): JsonResponse
     {
-        $authData = $this->authService->login($request->validated());
-        if($authData === null)
-        {
+        if (!$request->hasSession()) {
+            return $this->sessionRequired();
+        }
+
+        $user = $this->authService->login($request->validated());
+
+        if ($user === null) {
             return response()->json(['message' => 'Invalid credentials'], 401);
         }
 
-        return response()->json($authData, 200);
+        $request->session()->regenerate();
+
+        return $this->authResponse($request, $user, 200);
     }
 
-    public function logout(request $request)
+    public function logout(Request $request): JsonResponse
     {
-        $this->authService->logout($request->user());
-        return response()->json([
-            'message' => 'Logged out successfully'],200);
+        $this->authService->logout($request);
+
+        return response()->json(['message' => 'Logged out successfully'], 200);
     }
 
-    public function me(Request $request)
+    public function me(Request $request): JsonResponse
     {
         return response()->json($request->user(), 200);
     }
 
-}
+    /**
+     * Resposta de login/registro. Se o frontend enviou X-Guest-Token, o carrinho
+     * de visitante é fundido ao carrinho da conta e o resultado vai junto.
+     */
+    private function authResponse(Request $request, User $user, int $status): JsonResponse
+    {
+        $merge = $this->cartService->mergeGuestCartFromToken(
+            $user,
+            $request->header('X-Guest-Token')
+        );
 
+        return response()->json([
+            'user' => $user,
+            'cart' => $merge ? (new CartResource($merge['cart']))->resolve() : null,
+            'adjustments' => $merge['adjustments'] ?? [],
+        ], $status);
+    }
+
+    private function sessionRequired(): JsonResponse
+    {
+        return response()->json([
+            'message' => 'This request must come from the frontend (Origin/Referer of a stateful domain).',
+        ], 400);
+    }
+}

@@ -217,7 +217,7 @@ class CartControllerTest extends TestCase
 
         $response->assertOk()
             ->assertJsonStructure([
-                'cart',
+                'data' => ['id', 'items', 'total'],
                 'adjustments',
             ]);
 

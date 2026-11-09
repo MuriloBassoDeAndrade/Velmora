@@ -1,0 +1,50 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreOrderRequest;
+use App\Http\Resources\OrderResource;
+use App\Services\OrderService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+
+class OrderController extends Controller
+{
+    public function __construct(private OrderService $orderService) {}
+
+    public function index(Request $request): AnonymousResourceCollection
+    {
+        return OrderResource::collection(
+            $this->orderService->listForUser($request->user())
+        );
+    }
+
+    public function store(StoreOrderRequest $request): JsonResponse
+    {
+        $order = $this->orderService->createFromCart(
+            $request->user(),
+            $request->validated('address_id')
+        );
+
+        return (new OrderResource($order))->response()->setStatusCode(201);
+    }
+
+    public function show(Request $request, int $id): OrderResource
+    {
+        return new OrderResource(
+            $this->orderService->findForUser($request->user(), $id)
+        );
+    }
+
+    public function pay(Request $request, int $id): OrderResource
+    {
+        return new OrderResource($this->orderService->pay($request->user(), $id));
+    }
+
+    public function cancel(Request $request, int $id): OrderResource
+    {
+        return new OrderResource($this->orderService->cancel($request->user(), $id));
+    }
+}
