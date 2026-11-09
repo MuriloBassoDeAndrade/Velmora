@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\User;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthService
 {
@@ -35,9 +36,13 @@ class AuthService
     }
 
     public function logout(User $user): void
-    {
-        $user->currentAccessToken()->delete();
+{
+    $token = $user->currentAccessToken();
+
+    if ($token instanceof PersonalAccessToken) {
+        $token->delete();
     }
+}
 
     private function generateAuthResponse(User $user): array
     {
