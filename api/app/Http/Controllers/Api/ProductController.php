@@ -7,6 +7,7 @@ use App\Services\ProductService;
 use App\Http\Resources\ProductResource;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
+use Illuminate\Http\Request;
 
 
 class ProductController extends Controller
@@ -14,9 +15,11 @@ class ProductController extends Controller
 
     public function __construct(private ProductService $productService) {}
 
-    public function index()
-    {
-     return ProductResource::collection($this->productService->getAll());
+    public function index(Request $request)
+    {   
+        return ProductResource::collection(
+            $this->productService->getAll($request->query())
+        );
     }
 
     public function show(int $id)

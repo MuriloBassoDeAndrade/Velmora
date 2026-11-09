@@ -21,18 +21,26 @@ class CartService
 
     public function getOrCreateGuestCart(?string $guestToken = null): Cart
     {
-        if ($guestToken === null) {
-            $guestToken = (string) Str::uuid();
+        if ($guestToken !== null) {
+            if (!Str::isUuid($guestToken)) {
+                throw ValidationException::withMessages([
+                    'guest_token' => 'Invalid guest token.',
+                ]);
+            }
+
+            $cart = Cart::query()
+                ->where('guest_token', $guestToken)
+                ->first();
+
+            if ($cart) {
+                return $cart;
+            }
         }
 
-        if (!Str::isUuid($guestToken)) {
-            throw ValidationException::withMessages([
-                'guest_token' => 'Invalid guest token.',
-            ]);
-        }
+        $newGuestToken = (string) Str::uuid();
 
-        return Cart::query()->firstOrCreate([
-            'guest_token' => $guestToken,
+        return Cart::query()->create([
+            'guest_token' => $newGuestToken,
         ]);
     }
     public function getGuestCartByToken(string $guestToken): Cart

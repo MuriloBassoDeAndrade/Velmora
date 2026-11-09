@@ -530,4 +530,19 @@ class CartServiceTest extends TestCase
             (string) Str::uuid()
         );
     }
+    public function test_it_generates_a_new_token_when_guest_token_does_not_exist(): void
+    {
+        $unknownToken = (string) Str::uuid();
+
+        $cart = app(CartService::class)->getOrCreateGuestCart($unknownToken);
+
+        $this->assertNotEquals($unknownToken, $cart->guest_token);
+
+        $this->assertTrue(Str::isUuid($cart->guest_token));
+
+        $this->assertDatabaseHas('carts', [
+            'id' => $cart->id,
+            'guest_token' => $cart->guest_token,
+        ]);
+    }
 }

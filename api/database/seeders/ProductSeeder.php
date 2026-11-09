@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Product;
 use Illuminate\Database\Seeder;
 use App\Models\Category;
+use RuntimeException;
 
 
 
@@ -14,8 +15,20 @@ class ProductSeeder extends Seeder
     public function run(): void
     {
 
+    $categories = Category::pluck('id', 'slug');
 
+    $categorySlugs = [
+        1 => 'esportivo',
+        2 => 'social',
+        3 => 'casual',
+        4 => 'mergulho',
+    ];
 
+    foreach ($categorySlugs as $slug) {
+        if (!isset($categories[$slug])) {
+            throw new RuntimeException("Categoria não encontrada: {$slug}");
+        }
+    }
 
         $products = [
     [
@@ -296,11 +309,13 @@ class ProductSeeder extends Seeder
 
 
         foreach ($products as $data) {
+        $categorySlug = $categorySlugs[$data['category_id']];
+        $data['category_id'] = $categories[$categorySlug];
 
-            Product::updateOrCreate(
-                ['name' => $data['name'], 'brand' => $data['brand']],
-                $data + ['image_url' => null, 'active' => true],
-            );
-        }
+        Product::updateOrCreate(
+            ['name' => $data['name'], 'brand' => $data['brand']],
+            $data + ['image_url' => null, 'active' => true],
+        );
+    }
     }
 }

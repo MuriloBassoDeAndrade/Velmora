@@ -261,4 +261,38 @@ class CartControllerTest extends TestCase
         $response->assertUnprocessable()
             ->assertJsonValidationErrors(['quantity']);
     }
+    public function test_authenticated_user_with_sanctum_token_receives_user_cart(): void
+    {
+        $user = User::create([
+            'name' => 'Usuário Sanctum',
+            'email' => 'sanctum@velmora.com',
+            'password' => Hash::make('password'),
+        ]);
+
+        $token = $user->createToken('test-token')->plainTextToken;
+
+        $response = $this->withToken($token)
+            ->getJson('/api/cart');
+
+        $response->assertOk()
+            ->assertJsonStructure([
+                'data' => [
+                    'id',
+                    'items',
+                ],
+            ]);
+
+        $this->assertFalse(
+            $response->headers->has('X-Guest-Token')
+        );
+
+        $this->assertDatabaseHas('carts', [
+            'user_id' => $user->id,
+            'guest_token' => null,
+        ]);
+
+        $this->assertDatabaseMissing('carts', [
+            'user_id' => null,
+        ]);
+    }
 }

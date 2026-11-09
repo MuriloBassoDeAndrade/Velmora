@@ -15,10 +15,14 @@ class CartItemResource extends JsonResource
             || $product->trashed()
             || !$product->active
             || $product->stock <= 0;
+        $subtotal = $product
+            ? $product->price * $this->quantity
+            : 0;
         return [
             'id' => $this->id,
             'product_id' => $this->product_id,
             'quantity' => $this->quantity,
+            'subtotal' => number_format($subtotal, 2, '.', ''),
 
             'product' => $product ? [
                 'id' => $product->id,

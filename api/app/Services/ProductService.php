@@ -4,16 +4,47 @@ namespace App\Services;
 
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class ProductService
 {
-    public function getAll(): Collection
+    public function getAll(array $filters = []): LengthAwarePaginator
     {
-        return Product::query()
-        ->with(['category', 'characteristics'])
-        ->where('active', true)
-        ->orderBy('name')
-        ->get();
+        $query = Product::query()
+            ->with(['category', 'characteristics'])
+            ->where('active', true);
+
+        if (!empty($filters['search'])) {
+            $query->where('name', 'LIKE', '%' . $filters['search'] . '%');
+        }
+
+        if (!empty($filters['category'])) {
+            $query->whereHas('category', function ($categoryQuery) use ($filters) {
+                $categoryQuery->where('slug', $filters['category']);
+            });
+        }
+        $sort = $filters['sort'] ?? 'name';
+
+        switch ($sort) {
+            case 'price_asc':
+                $query->orderBy('price', 'asc');
+                break;
+
+            case 'price_desc':
+                $query->orderBy('price', 'desc');
+                break;
+
+            case 'recent':
+                $query->orderBy('created_at', 'desc');
+                break;
+
+            default:
+                $query->orderBy('name', 'asc');
+                break;
+}
+        return $query
+            ->paginate(12)
+            ->withQueryString();
     }
 
     public function getAllAdmin(): Collection

@@ -59,6 +59,7 @@ Route::apiResource('characteristics', CharacteristicController::class)
     ->middleware(['auth:sanctum', 'admin']);
 
 // Cart routes
+
 Route::get('/cart', [CartController::class, 'index']);
 Route::post('/cart/items', [CartController::class, 'store']);
 Route::put('/cart/items/{id}', [CartController::class, 'update']);

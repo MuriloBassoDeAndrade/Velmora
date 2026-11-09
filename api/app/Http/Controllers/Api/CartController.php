@@ -18,19 +18,15 @@ class CartController extends Controller
 
     public function index(Request $request)
     {
-        if ($request->user()) {
-            $cart = $this->cartService->getOrCreateUserCart($request->user());
-        } else {
-            $guestToken = $request->header('X-Guest-Token');
-            $cart = $this->cartService->getOrCreateGuestCart($guestToken);
-        }
+        $cart = $this->resolveCart($request);
+
 
         $cart = $this->cartService->getCart($cart);
 
         $response = (new CartResource($cart))->response();
         $response->setStatusCode(200);
 
-        if (!$request->user()) {
+        if (!$request->user('sanctum')) {
             $response->headers->set('X-Guest-Token', $cart->guest_token);
         }
 
@@ -39,12 +35,8 @@ class CartController extends Controller
 
     public function store(StoreCartItemRequest $request)
     {
-        if ($request->user()) {
-            $cart = $this->cartService->getOrCreateUserCart($request->user());
-        } else {
-            $guestToken = $request->header('X-Guest-Token');
-            $cart = $this->cartService->getOrCreateGuestCart($guestToken);
-        }
+        $cart = $this->resolveCart($request);
+
 
         $validated = $request->validated();
 
@@ -59,7 +51,7 @@ class CartController extends Controller
         $response = (new CartResource($cart))->response();
         $response->setStatusCode(200);
 
-        if (!$request->user()) {
+        if (!$request->user('sanctum')) {
             $response->headers->set('X-Guest-Token', $cart->guest_token);
         }
 
@@ -68,12 +60,8 @@ class CartController extends Controller
 
     public function update(UpdateCartItemRequest $request, int $id)
     {
-        if ($request->user()) {
-            $cart = $this->cartService->getOrCreateUserCart($request->user());
-        } else {
-            $guestToken = $request->header('X-Guest-Token');
-            $cart = $this->cartService->getOrCreateGuestCart($guestToken);
-        }
+        $cart = $this->resolveCart($request);
+
 
         $validated = $request->validated();
 
@@ -87,7 +75,7 @@ class CartController extends Controller
 
         $response = (new CartResource($cart))->response();
 
-        if (!$request->user()) {
+        if (!$request->user('sanctum')) {
             $response->headers->set('X-Guest-Token', $cart->guest_token);
         }
 
@@ -96,12 +84,7 @@ class CartController extends Controller
 
     public function destroy(Request $request, int $id)
     {
-        if ($request->user()) {
-            $cart = $this->cartService->getOrCreateUserCart($request->user());
-        } else {
-            $guestToken = $request->header('X-Guest-Token');
-            $cart = $this->cartService->getOrCreateGuestCart($guestToken);
-        }
+        $cart = $this->resolveCart($request);
 
         $this->cartService->removeItem($cart, $id);
 
@@ -109,7 +92,7 @@ class CartController extends Controller
 
         $response = (new CartResource($cart))->response();
 
-        if (!$request->user()) {
+        if (!$request->user('sanctum')) {
             $response->headers->set('X-Guest-Token', $cart->guest_token);
         }
 
@@ -129,7 +112,7 @@ class CartController extends Controller
         $guestCart = $this->cartService->getGuestCartByToken($guestToken);
 
         $result = $this->cartService->mergeCarts(
-            $request->user(),
+            $request->user('sanctum'),
             $guestCart,
             $guestToken
         );
@@ -139,4 +122,13 @@ class CartController extends Controller
             'adjustments' => $result['adjustments'],
         ]);
     }
+    private function resolveCart(Request $request)
+    {
+        if ($request->user('sanctum')) {
+            return $this->cartService->getOrCreateUserCart($request->user('sanctum'));
+        }
+            $guestToken = $request->header('X-Guest-Token');
+            return $this->cartService->getOrCreateGuestCart($guestToken);
+    }
+
 }
