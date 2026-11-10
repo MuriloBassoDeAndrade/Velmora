@@ -1,60 +1,70 @@
-# Velmora — status da finalização
+# Velmora — histórico da finalização
 
-Este documento substitui as anotações antigas de atualização. Todos os caminhos são relativos à raiz do repositório.
+Todos os caminhos são relativos à raiz do repositório. Este arquivo registra o estado do projeto após a implementação das telas restantes do frontend.
 
-## Concluído
+## Backend — base existente mantida
 
-### Backend
-- Catálogo de produtos, categorias e características com validação por Form Requests, Resources e Services.
-- Perfil: `PUT /api/user` permite atualizar nome/e-mail; troca de senha exige senha atual e confirmação.
-- Carrinho de visitante e autenticado, com `X-Guest-Token`, controle de estoque e fusão automática no login/registro.
+- API REST Laravel 12 organizada em Controllers, Form Requests, Resources e Services.
+- Autenticação por sessão/cookie com Sanctum, CSRF e papéis `customer` e `admin`.
+- Catálogo público com busca, categoria, ordenação e paginação.
+- Carrinho visitante identificado por `X-Guest-Token`, carrinho autenticado e fusão no login/registro.
 - Endereços e pedidos com isolamento por usuário.
-- Checkout transacional: bloqueia linhas de produto, valida estoque, cria snapshots dos itens, decrementa estoque e esvazia o carrinho.
-- Pagamento simulado e transições de status com HTTP 409 para transições inválidas.
-- Rotas administrativas protegidas por middleware `admin`; listagem de produtos e pedidos paginada.
-- Log de alterações administrativas de estoque e status de pedidos.
-- Upload de imagens de produto (JPG/JPEG/PNG/WEBP, até 5 MB) para o disco público do Laravel; atualização remove o arquivo local anterior.
-- Formato de erro padronizado para 400/401/403/404/409/419/422.
+- Checkout transacional com bloqueio de estoque, snapshots de nome/preço, decremento e limpeza do carrinho.
+- Pagamento simulado e transições válidas com HTTP 409 em conflitos.
+- CRUD de produtos/categorias, atualização de estoque e endpoints administrativos protegidos.
+- Upload de imagem de produto com validação e armazenamento persistente.
+- Swagger UI em `/docs/` e OpenAPI em `/openapi.yaml`.
 
-### Frontend
-- Vitrine conectada a `GET /api/products`, com filtros de público e imagens do catálogo.
-- Carrinho real conectado à API: adicionar, alterar quantidade, remover e preservar carrinho visitante via token.
-- Login, cadastro, sessão por cookie, CSRF e edição de nome/e-mail.
-- Checkout conectado à API: selecionar/cadastrar endereço, criar pedido e registrar pagamento simulado.
-- Frete exibido de acordo com o backend: R$ 29,90.
+## Frontend — finalização das funcionalidades visuais
 
-### Infraestrutura e documentação
-- Compose com containers separados para proxy Nginx, frontend, API e MySQL.
-- Volume persistente para imagens públicas e volume separado para dados MySQL.
-- Nginx do frontend corrigido e copiado para a imagem final.
-- Limites de upload alinhados entre Nginx e PHP.
-- `Dockerfile.dev` usa `artisan serve` somente no ambiente local; `api/Dockerfile` usa FrankenPHP para produção.
-- `README.md` da raiz e `api/README.md` atualizados com instalação, arquitetura, regras e autenticação.
-- Swagger UI em `/docs/` e especificação OpenAPI em `/openapi.yaml`.
-- GitHub Actions executa a suíte Laravel com MySQL e o build do frontend.
+### Arquivos alterados
+- `frontend/src/index.html`: estrutura principal, navegação, área dinâmica da aplicação, modais de carrinho/conta e rodapé.
+- `frontend/src/script.js`: integração JavaScript com os endpoints da API e renderização das páginas.
+- `frontend/src/styles/style.css`: identidade visual responsiva para desktop e dispositivos móveis.
+- `frontend/Dockerfile`: recebe `VITE_API_URL` como argumento de build.
+- `compose.yaml`: encaminha a variável `VITE_API_URL` para o build do frontend.
+- `frontend/.env.example`: documenta a URL opcional da API e o destino do proxy Vite.
 
-## Regras de negócio importantes
+### Funcionalidades entregues
+- Catálogo com busca por nome, filtro por categoria, ordenação por nome/preço/recência e paginação.
+- Estado vazio com mensagem quando a busca não encontra produtos.
+- Página própria em `/produto/{id}`, com descrição, preço, categoria, imagem, características, disponibilidade e quantidade limitada pelo estoque.
+- Carrinho visitante e autenticado com atualização de quantidade, remoção, subtotal, total e indicador de quantidade.
+- Login, registro, restauração da sessão, logout e retorno à página protegida após autenticação.
+- Perfil com atualização de nome/e-mail/senha.
+- Gerenciamento de endereços: listar, cadastrar, editar e excluir (respeitando bloqueio do backend para endereços usados em pedidos).
+- Checkout com seleção ou cadastro de endereço, criação do pedido e redirecionamento ao detalhe do pedido.
+- Histórico de pedidos, detalhe com itens/preços/endereço/status, pagamento simulado e cancelamento de pedido pendente.
+- Painel visual de administração com cadastro/edição/exclusão lógica de produtos, upload de imagem, controle de estoque, CRUD de categorias e filtro/avanço de status dos pedidos.
+- Navegação por URLs próprias: loja, produto, pedidos, pedido, perfil e painel; fallback SPA do Nginx atende recarga de rotas.
+- Layout responsivo, mensagens de erro/sucesso e indicação explícita de pagamento demonstrativo.
 
-- Preços e totais são calculados em centavos inteiros; recursos monetários retornam valores decimais em string.
-- Produtos inativos ou indisponíveis não entram no total do carrinho; checkout bloqueia produto inativo ou estoque insuficiente.
-- Frete fixo: R$ 29,90.
-- Pedido nasce em `pending_payment`; pagamento é simulado.
+## Documentação e configuração
+
+- `README.md` atualizado com arquitetura, execução, credenciais de demonstração, regra de fusão, recursos do frontend, variáveis de ambiente, Docker, Swagger e orientações de produção.
+- Contas de seed documentadas: `admin@velmora.com`, `ana@velmora.com`, `bruno@velmora.com` e `carla@velmora.com`. Todas usam a senha configurada localmente em `SEEDER_DEFAULT_PASSWORD`; nenhuma senha real é versionada.
+- `VITE_API_URL` configurável no build. Vazio significa usar o proxy same-origin do Compose.
+
+## Regras de negócio preservadas
+
+- Preços e totais calculados no servidor e manipulados em centavos inteiros.
+- Frete fixo de R$ 29,90.
+- Pedido inicia em `pending_payment`; pagamento simulado não coleta cartão.
 - Transições: `pending_payment → paid | cancelled`, `paid → shipped`, `shipped → delivered`.
-- Cancelamento permitido restaura o estoque.
-- Usuários acessam apenas seus próprios endereços e pedidos; administrador acessa rotas administrativas.
-- O cookie de sessão é host-only no Docker local. Em produção com HTTPS, configurar `SESSION_SECURE_COOKIE=true` e o domínio real em `SANCTUM_STATEFUL_DOMAINS`.
+- Cancelamento pendente restaura o estoque.
+- Produtos usam exclusão lógica para preservar o histórico de pedidos.
+- Administração protegida por autenticação e papel.
 
-## Testes e verificação
+## Infraestrutura
 
-- A suíte automatizada inclui testes de autenticação, perfil, catálogo, permissões administrativas, carrinho, endereços, pedidos, estoque e erros.
-- Há um teste de regressão para dois clientes disputando a última unidade: somente um pedido é criado.
-- O workflow de CI executa testes Laravel em MySQL e `npm run build` no frontend.
-- CI MySQL: **166 testes passaram, com 573 asserções**. O build do frontend também concluiu com sucesso.
-- A execução foi validada depois da integração de login, perfil, checkout, upload de imagens e teste de estoque entre dois clientes.
-- O teste de checkout cobre concorrência pelo bloqueio transacional/estoque em requisições sequenciais. Uma simulação de requisições realmente paralelas continua sendo uma validação adicional de integração recomendada.
+- Um único `compose.yaml` com proxy, frontend, API e MySQL.
+- Dockerfile único para frontend.
+- `api/Dockerfile.dev` para desenvolvimento e `api/Dockerfile` de produção com FrankenPHP.
+- Volumes persistentes para MySQL e imagens públicas.
 
-## Observações
+## Verificações conhecidas
 
-- O pagamento continua demonstrativo; não existe gateway real integrado.
-- O frontend cobre vitrine, carrinho, conta e checkout. A gestão administrativa está disponível pela API e Swagger, mas não há painel administrativo visual completo.
-- Para rodar localmente, siga o README da raiz e defina `SEEDER_DEFAULT_PASSWORD` no `api/.env`.
+- Antes desta rodada, a suíte Laravel validada no MySQL registrou 166 testes e 573 asserções aprovadas; o build do frontend também havia passado.
+- As alterações desta rodada foram feitas diretamente na branch `feature/backend-finalizacao` via GitHub. Elas ainda precisam ser baixadas e executadas no ambiente Docker local para validar build, testes, navegação e integração real.
+- Não foi feita hospedagem pública. É o extra pontuado de +10 e deve ser considerado somente após validação local.
+- O teste de concorrência existente verifica a proteção de estoque no fluxo automatizado, mas uma simulação de processos realmente paralelos pode ser uma validação adicional.
