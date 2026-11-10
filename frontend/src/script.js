@@ -340,6 +340,8 @@ document.addEventListener("click", async (event) => {
   const link = event.target.closest("a[data-link]");
   if (link && link.origin === location.origin) {
     event.preventDefault();
+    if (link.closest("#accountDialog")) accountDialog.close();
+    if (link.closest("#cartDialog")) cartDialog.close();
     navigate(link.pathname + link.search + link.hash);
     return;
   }
