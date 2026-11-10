@@ -21,10 +21,24 @@ Velmora/
 │   ├── app/Services       # Regras de negócio e acesso ao banco
 │   ├── database           # Migrations, factories e seeders
 │   └── public             # Swagger UI e openapi.yaml
-├── frontend/              # HTML, CSS e JavaScript puro
+├── frontend/
+│   ├── index.html          # página inicial
+│   ├── pages/              # HTML separado para cada tela
+│   ├── src/
+│   │   ├── api/             # comunicação com a API Laravel (Axios)
+│   │   ├── pages/           # renderização e lógica de cada tela
+│   │   ├── components/      # componentes HTML reutilizáveis
+│   │   ├── utils/           # formatação, guards e armazenamento
+│   │   ├── styles/          # CSS base e componentes
+│   │   └── main.js          # inicialização e eventos globais
+│   └── public/images/       # imagens estáticas públicas
 ├── mysql/init/            # Inicialização do banco de testes
 └── compose.yaml
 ```
+
+### Organização do frontend
+
+Os documentos HTML ficam em `frontend/index.html` e `frontend/pages/`. O JavaScript fica separado em `frontend/src/`: os módulos de `api/` conversam com o Laravel, `pages/` contém a renderização de cada tela e `main.js` coordena a inicialização e os eventos compartilhados. O Vite gera as páginas HTML como entradas independentes.
 
 ## Executar localmente
 
