@@ -281,7 +281,14 @@ async function openCheckout() {
     content.innerHTML = '<p class="muted">O frete fixo é de R$ 29,90. O total será calculado e confirmado pelo servidor.</p>' +
       '<form id="checkoutForm" class="form-grid"><label class="wide">Endereço de entrega<select name="address_id" id="checkoutAddress"><option value="">Cadastrar novo endereço</option>' + addresses.map((a) => '<option value="' + a.id + '">' + esc(a.recipient_name) + ' — ' + esc(a.street) + ', ' + esc(a.number) + ' · ' + esc(a.city) + '/' + esc(a.state) + '</option>').join("") + '</select></label>' +
       '<div id="checkoutNewAddress" class="form-grid wide" ' + (addresses.length ? "hidden" : "") + '>' + addressFieldsMarkup() + '</div><button class="solid-btn wide" type="submit">Criar pedido</button></form>';
-    content.querySelector("#checkoutAddress").addEventListener("change", (event) => content.querySelector("#checkoutNewAddress").hidden = Boolean(event.target.value));
+    const addressFields = content.querySelector("#checkoutNewAddress");
+    const syncAddressFields = () => {
+      const useExisting = Boolean(content.querySelector("#checkoutAddress").value);
+      addressFields.hidden = useExisting;
+      addressFields.querySelectorAll("input").forEach((input) => input.disabled = useExisting);
+    };
+    content.querySelector("#checkoutAddress").addEventListener("change", syncAddressFields);
+    syncAddressFields();
     cartDialog.close();
     dialog.showModal();
   } catch (error) { notify(error.message, "error"); }
@@ -335,12 +342,6 @@ document.addEventListener("click", async (event) => {
   if (close) document.getElementById(close.dataset.close)?.close();
   const authMode = event.target.closest("[data-auth-mode]");
   if (authMode) renderAuthForm(authMode.dataset.authMode);
-  if (event.target.closest("#accountButton")) {
-    renderAuthForm();
-    accountDialog.showModal();
-  }
-  if (event.target.closest("#cartButton")) openCart();
-  if (event.target.closest("#checkoutButton")) openCheckout();
   if (event.target.closest("[data-clear-filters]")) navigate("/");
   const pageButton = event.target.closest("[data-page]");
   if (pageButton) {
