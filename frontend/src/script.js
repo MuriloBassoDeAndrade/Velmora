@@ -50,6 +50,7 @@ async function apiRequest(url, options = {}) {
   if (options.body) headers.set("Content-Type", "application/json");
   const method = (options.method || "GET").toUpperCase();
   if (!["GET", "HEAD", "OPTIONS"].includes(method)) {
+    if (!readCookie("XSRF-TOKEN")) await ensureCsrfCookie();
     const xsrf = readCookie("XSRF-TOKEN");
     if (xsrf) headers.set("X-XSRF-TOKEN", xsrf);
   }
