@@ -1,6 +1,7 @@
 import { clearGuestToken } from "./api/http.js";
 import { money, escapeHtml as esc } from "./utils/format.js";
 import { productCard, productImage } from "./components/productCard.js";
+import { cartItem } from "./components/cartItem.js";
 import { updateHeaderSession } from "./components/header.js";
 import * as authApi from "./api/auth.js";
 import * as productApi from "./api/products.js";
@@ -278,13 +279,9 @@ async function finishLogin(payload) {
 async function openCart() {
   await loadCart();
   const items = cart?.items || [];
-  cartContent.innerHTML = items.length ? items.map((item) => {
-    const product = item.product;
-    const unavailable = item.unavailable || !product;
-    return '<article class="cart-item">' + productImage(product || {}, "cart-thumb") + '<div class="cart-item-main"><strong>' + esc(product?.name || "Produto indisponível") + '</strong><span>' + money(product?.price) + ' · Subtotal ' + money(item.subtotal) + '</span>' +
-      (unavailable ? '<small class="danger-text">Produto indisponível.</small>' : item.exceeds_stock ? '<small class="danger-text">Quantidade acima do estoque.</small>' : '') +
-      '<div class="quantity-control"><button data-cart-change="minus" data-item="' + item.id + '">−</button><span>' + item.quantity + '</span><button data-cart-change="plus" data-item="' + item.id + '" ' + (unavailable ? "disabled" : "") + '>+</button><button class="text-link danger-text" data-cart-change="remove" data-item="' + item.id + '">Remover</button></div></div></article>';
-  }).join("") : '<div class="empty-state"><h3>Seu carrinho está vazio</h3><p>Adicione um relógio para começar.</p></div>';
+  cartContent.innerHTML = items.length
+    ? items.map(cartItem).join("")
+    : '<div class="empty-state"><h3>Seu carrinho está vazio</h3><p>Adicione um relógio para começar.</p></div>';
   document.getElementById("cartTotal").textContent = money(cart?.total || 0);
   document.getElementById("checkoutButton").disabled = !items.length;
   cartDialog.showModal();
