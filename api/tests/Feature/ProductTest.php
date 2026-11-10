@@ -245,7 +245,7 @@ class ProductTest extends TestCase
 
         $response = $this->post('/api/products', $this->productPayload([
             'image_url' => null,
-            'image' => UploadedFile::fake()->image('velmora-watch.jpg'),
+            'image' => UploadedFile::fake()->create('velmora-watch.jpg', 100, 'image/jpeg'),
         ]));
 
         $response->assertCreated();
