@@ -1,4 +1,7 @@
 import { renderHome as renderHomePage } from "./pages/home.js";
+import { renderProducts as renderProductsPage } from "./pages/products.js";
+import { renderRegister as renderRegisterPage } from "./pages/register.js";
+import { renderNotFound } from "./pages/404.js";
 import { renderProduct as renderProductPage } from "./pages/product.js";
 import { renderOrders as renderOrdersPage } from "./pages/orders.js";
 import { renderOrder as renderOrderPage } from "./pages/order.js";
@@ -168,6 +171,9 @@ const context = {
   productCard, productImage, cartItem, addressCard, addressForm,
   productAdminForm, categoryAdminForm, createCheckoutDialog, addressFieldsMarkup,
   renderHome: (...args) => renderHome(context, ...args),
+  renderProducts: (...args) => renderProductsPage(context, ...args),
+  renderRegister: (...args) => renderRegisterPage(context, ...args),
+  renderNotFound: () => renderNotFound(context),
   renderProduct: (...args) => renderProduct(context, ...args),
   renderOrders: (...args) => renderOrders(context, ...args),
   renderOrder: (...args) => renderOrder(context, ...args),
