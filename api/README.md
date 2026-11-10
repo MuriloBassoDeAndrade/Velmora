@@ -1,86 +1,48 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# API Velmora
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+API REST do e-commerce Velmora, construída com Laravel 12 e PHP 8.4.
 
-## About Laravel
+A documentação de endpoints fica no Swagger UI em [http://localhost/docs/](http://localhost/docs/) e na especificação [public/openapi.yaml](public/openapi.yaml).
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Organização
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- `app/Http/Controllers`: camada HTTP, mantém controllers enxutos.
+- `app/Http/Requests`: validação e autorização de entrada.
+- `app/Http/Resources`: formato de saída JSON.
+- `app/Services`: regras de negócio e operações de banco de dados.
+- `app/Models`: entidades e relacionamentos Eloquent.
+- `database/migrations`: estrutura do banco.
+- `database/seeders`: dados demonstrativos.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Executar pelo Docker
 
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
-
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-## Laravel Sponsors
-
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
-
-### Premium Partners
-
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-
-## Dados de desenvolvimento
-
-Para recriar o banco de desenvolvimento com dados de demonstração:
+Na raiz do repositório:
 
 ```bash
-php artisan migrate:fresh --seed
+cp api/.env.example api/.env
+# Defina SEEDER_DEFAULT_PASSWORD no arquivo api/.env.
+docker compose up --build -d
+docker compose exec api php artisan key:generate
+docker compose exec api php artisan migrate --seed
 ```
 
-### Credenciais de teste
+## Testes
 
-Todas as contas usam a senha `Velmora123!`.
+```bash
+docker compose exec api php artisan test
+```
 
-| Perfil | E-mail | Senha |
-|---|---|---|
-| Administrador | `admin@velmora.com` | `Velmora123!` |
-| Cliente | `ana@velmora.com` | `Velmora123!` |
-| Cliente | `bruno@velmora.com` | `Velmora123!` |
-| Cliente | `carla@velmora.com` | `Velmora123!` |
+O PHPUnit aponta para o banco separado `velmora_test`. O Compose cria esse banco em uma instalação MySQL nova por meio de `mysql/init/01-create-test-database.sql`.
 
-### Dados dos seeders
+## Autenticação
 
-O frete usado pelos pedidos do seeder é fixo e igual a **R$ 29,90** em todos os pedidos, incluindo pedidos cancelados.
+O frontend usa sessão/cookie do Laravel Sanctum (SPA). Obtenha o cookie CSRF por `GET /sanctum/csrf-cookie`, envie o valor decodificado de `XSRF-TOKEN` no header `X-XSRF-TOKEN` e mantenha `credentials: 'include'` no fetch. O login/registro fundem o carrinho visitante quando recebem `X-Guest-Token`.
 
-Os pedidos do seeder ficam distribuídos entre Ana, Bruno e Carla e cobrem os status `pending_payment`, `paid`, `shipped`, `delivered` e `cancelled`. Somente `paid`, `shipped` e `delivered` possuem pagamento registrado.
+## Regras de negócio
 
-Recrie sempre o ambiente de desenvolvimento com `php artisan migrate:fresh --seed` para evitar registros duplicados ao executar novamente os seeders de carrinhos ou pedidos.
+- Valores monetários são tratados em centavos inteiros.
+- Frete fixo: R$ 29,90.
+- Pagamento é simulado.
+- Checkout e alterações de estoque são transacionais e usam bloqueio de linhas.
+- Transições inválidas de pedido retornam HTTP 409.
+- Rotas administrativas exigem middleware `admin`.
