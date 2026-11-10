@@ -49,7 +49,8 @@ Este documento substitui as anotações antigas de atualização. Todos os camin
 - A suíte automatizada inclui testes de autenticação, perfil, catálogo, permissões administrativas, carrinho, endereços, pedidos, estoque e erros.
 - Há um teste de regressão para dois clientes disputando a última unidade: somente um pedido é criado.
 - O workflow de CI executa testes Laravel em MySQL e `npm run build` no frontend.
-- O último workflow completo consultado concluiu com sucesso para backend e frontend. Alterações posteriores também acionaram novas execuções; consultar a aba Actions para o resultado do commit mais recente.
+- CI MySQL: **166 testes passaram, com 573 asserções**. O build do frontend também concluiu com sucesso.
+- A execução foi validada depois da integração de login, perfil, checkout, upload de imagens e teste de estoque entre dois clientes.
 - O teste de checkout cobre concorrência pelo bloqueio transacional/estoque em requisições sequenciais. Uma simulação de requisições realmente paralelas continua sendo uma validação adicional de integração recomendada.
 
 ## Observações
