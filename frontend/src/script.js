@@ -18,6 +18,13 @@ let toastTimer;
 
 const unwrap = (payload) => payload?.data ?? payload;
 
+function notify(message, type = "success") {
+  toastNode.textContent = message;
+  toastNode.className = "toast is-visible " + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastNode.classList.remove("is-visible"), 3400);
+}
+
 function setSessionUI() {
   updateHeaderSession(currentUser);
   updateCartCount();
