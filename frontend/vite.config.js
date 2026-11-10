@@ -28,25 +28,25 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
-    root: 'src',
+    root: process.cwd(),
     
     build: {
-      outDir: '../dist',
+      outDir: 'dist',
       emptyOutDir: true,
       rollupOptions: {
         input: {
-          index: resolve(process.cwd(), 'src/index.html'),
-          login: resolve(process.cwd(), 'src/pages/login.html'),
-          register: resolve(process.cwd(), 'src/pages/register.html'),
-          products: resolve(process.cwd(), 'src/pages/products.html'),
-          product: resolve(process.cwd(), 'src/pages/product.html'),
-          cart: resolve(process.cwd(), 'src/pages/cart.html'),
-          checkout: resolve(process.cwd(), 'src/pages/checkout.html'),
-          orders: resolve(process.cwd(), 'src/pages/orders.html'),
-          order: resolve(process.cwd(), 'src/pages/order.html'),
-          profile: resolve(process.cwd(), 'src/pages/profile.html'),
-          admin: resolve(process.cwd(), 'src/pages/admin.html'),
-          notFound: resolve(process.cwd(), 'src/pages/404.html'),
+          index: resolve(process.cwd(), 'index.html'),
+          login: resolve(process.cwd(), 'pages/login.html'),
+          register: resolve(process.cwd(), 'pages/register.html'),
+          products: resolve(process.cwd(), 'pages/products.html'),
+          product: resolve(process.cwd(), 'pages/product.html'),
+          cart: resolve(process.cwd(), 'pages/cart.html'),
+          checkout: resolve(process.cwd(), 'pages/checkout.html'),
+          orders: resolve(process.cwd(), 'pages/orders.html'),
+          order: resolve(process.cwd(), 'pages/order.html'),
+          profile: resolve(process.cwd(), 'pages/profile.html'),
+          admin: resolve(process.cwd(), 'pages/admin.html'),
+          notFound: resolve(process.cwd(), 'pages/404.html'),
         },
       },
     },
