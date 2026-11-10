@@ -14,6 +14,15 @@ const cartDialog = document.getElementById("cartDialog");
 const cartContent = document.getElementById("cartContent");
 const cartTotal = document.getElementById("cartTotal");
 const closeCartButton = document.getElementById("closeCart");
+const accountButton = document.getElementById("accountButton");
+const accountDialog = document.getElementById("accountDialog");
+const accountContent = document.getElementById("accountContent");
+const closeAccountButton = document.getElementById("closeAccount");
+const checkoutButton = document.getElementById("checkoutButton");
+const checkoutDialog = document.getElementById("checkoutDialog");
+const checkoutContent = document.getElementById("checkoutContent");
+const closeCheckoutButton = document.getElementById("closeCheckout");
+let currentUser = null;
 
 const formatPrice = (value) => Number(value ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
@@ -21,6 +30,15 @@ const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => 
 })[char]);
 
 function guestToken() { return localStorage.getItem(GUEST_TOKEN_KEY); }
+function readCookie(name) {
+  const prefix = name + "=";
+  const cookie = document.cookie.split("; ").find((entry) => entry.startsWith(prefix));
+  return cookie ? decodeURIComponent(cookie.slice(prefix.length)) : null;
+}
+async function ensureCsrfCookie() {
+  const response = await fetch("/sanctum/csrf-cookie", { credentials: "include" });
+  if (!response.ok) throw new Error("Não foi possível iniciar a proteção CSRF.");
+}
 function rememberGuestToken(response) {
   const token = response.headers.get("X-Guest-Token");
   if (token) localStorage.setItem(GUEST_TOKEN_KEY, token);
@@ -30,6 +48,11 @@ async function apiRequest(url, options = {}) {
   const headers = new Headers(options.headers || {});
   headers.set("Accept", "application/json");
   if (options.body) headers.set("Content-Type", "application/json");
+  const method = (options.method || "GET").toUpperCase();
+  if (!["GET", "HEAD", "OPTIONS"].includes(method)) {
+    const xsrf = readCookie("XSRF-TOKEN");
+    if (xsrf) headers.set("X-XSRF-TOKEN", xsrf);
+  }
   const token = guestToken();
   if (token) headers.set("X-Guest-Token", token);
 
@@ -218,4 +241,4 @@ tickClock();
 window.setInterval(tickClock, reduceMotion ? 1000 : 100);
 renderDialMarkers();
 loadProducts();
-loadCart();
+restoreSession();
