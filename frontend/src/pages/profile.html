@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Velmora — relógios para acompanhar cada momento."><meta name="theme-color" content="#171a18">
+  <title>Velmora — Relógios que marcam o seu tempo</title>
+  <link rel="icon" type="image/png" href="/img/logo-mark.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Jost:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles/style.css">
+</head>
+<body data-page="profile">
+  <header class="topbar"><div class="wrap topbar-inner">
+    <a class="brand" href="/" data-link><img src="/img/logo-mark.png" alt="" width="38" height="38"><span>Velmora</span></a>
+    <nav class="nav" aria-label="Navegação principal">
+      <a href="/" data-link>Loja</a><a href="/pedidos" data-link data-auth-link>Meus pedidos</a><a href="/perfil" data-link data-auth-link>Perfil</a><a href="/admin" data-link data-admin-link hidden>Painel</a>
+    </nav>
+    <div class="top-actions"><button class="ghost-btn" id="cartButton" type="button">Carrinho <span class="count" id="cartCount">0</span></button><button class="solid-btn" id="accountButton" type="button">Entrar</button></div>
+  </div></header>
+  <main id="app" class="wrap page-wrap" aria-live="polite"><section class="loading-state"><span class="spinner"></span><p>Carregando Velmora...</p></section></main>
+  <footer class="site-footer"><div class="wrap footer-inner">
+    <div class="footer-brand"><img src="/img/logo-velmora.png" alt="Velmora" width="190"><p>Relógios que marcam o seu tempo.</p></div>
+    <div><strong>Atendimento</strong><p>Compra demonstrativa para fins acadêmicos.</p><p>Pagamento simulado — nenhum dado de cartão é solicitado.</p></div><small>© 2026 Velmora Relógios</small>
+  </div></footer>
+  <dialog class="modal" id="cartDialog"><div class="modal-head"><h2>Seu carrinho</h2><button class="icon-btn" data-close="cartDialog" aria-label="Fechar">×</button></div>
+    <div class="modal-body" id="cartContent"></div><div class="modal-foot"><div class="total-line"><span>Total</span><strong id="cartTotal">R$ 0,00</strong></div>
+    <p class="muted">Frete fixo de R$ 29,90. O total definitivo é calculado pela API.</p><button class="solid-btn full" id="checkoutButton">Continuar para entrega</button></div>
+  </dialog>
+  <dialog class="modal" id="accountDialog"><div class="modal-head"><h2>Sua conta</h2><button class="icon-btn" data-close="accountDialog" aria-label="Fechar">×</button></div><div class="modal-body" id="accountContent"></div></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="/pages/profile.js"></script>
+</body></html>
