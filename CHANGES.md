@@ -1,83 +1,59 @@
-# Velmora: o que mudou nesta atualização
+# Velmora — status da finalização
 
-Todos os caminhos são relativos à raiz do repositório (a pasta que tem `api/` e `compose.yaml`).
-Copie as pastas por cima, aceitando substituir. **Apague `api/tests/Feature/UpdateCartItemTest.php`**
-(era só o `ExampleTest` do Laravel e testava a rota `/`, que não existe mais).
+Este documento substitui as anotações antigas de atualização. Todos os caminhos são relativos à raiz do repositório.
 
-## 1. Dinheiro sem float
-- Novo `app/Support/Money.php`: converte `"999.90"` para centavos inteiros, faz a conta com inteiros e formata de volta.
-- `CartItem::subtotalCents()` / `Cart::totalCents()` concentram a regra; os Resources só formatam.
-- Item indisponível vale `0.00` e **não entra no total** (regra que já estava no repositório).
-- O total **inclui** item acima do estoque (veja o item 5), mas o checkout o recusa.
+## Concluído
 
-## 2. Catálogo
-- `sort=recent` ordena por `id` decrescente (estável).
-- Busca com `%` e `_` agora é literal (`LIKE ... ESCAPE '!'`, igual no MySQL e no SQLite).
+### Backend
+- Catálogo de produtos, categorias e características com validação por Form Requests, Resources e Services.
+- Perfil: `PUT /api/user` permite atualizar nome/e-mail; troca de senha exige senha atual e confirmação.
+- Carrinho de visitante e autenticado, com `X-Guest-Token`, controle de estoque e fusão automática no login/registro.
+- Endereços e pedidos com isolamento por usuário.
+- Checkout transacional: bloqueia linhas de produto, valida estoque, cria snapshots dos itens, decrementa estoque e esvazia o carrinho.
+- Pagamento simulado e transições de status com HTTP 409 para transições inválidas.
+- Rotas administrativas protegidas por middleware `admin`; listagem de produtos e pedidos paginada.
+- Log de alterações administrativas de estoque e status de pedidos.
+- Upload de imagens de produto (JPG/JPEG/PNG/WEBP, até 5 MB) para o disco público do Laravel; atualização remove o arquivo local anterior.
+- Formato de erro padronizado para 400/401/403/404/409/419/422.
 
-## 3. Fusão de carrinhos
-- `POST /api/cart/merge` devolve `{ "data": {carrinho}, "adjustments": [...] }` (mesmo `data` das outras rotas).
-- **Login e registro também fundem** quando o frontend manda `X-Guest-Token`. A resposta é
-  `{ "user", "cart", "adjustments" }`. Token ausente, inválido ou desconhecido é ignorado e não bloqueia o login.
+### Frontend
+- Vitrine conectada a `GET /api/products`, com filtros de público e imagens do catálogo.
+- Carrinho real conectado à API: adicionar, alterar quantidade, remover e preservar carrinho visitante via token.
+- Login, cadastro, sessão por cookie, CSRF e edição de nome/e-mail.
+- Checkout conectado à API: selecionar/cadastrar endereço, criar pedido e registrar pagamento simulado.
+- Frete exibido de acordo com o backend: R$ 29,90.
 
-## 4. Login por cookie (Sanctum SPA)
-- `AuthService`/`AuthController` usam a sessão (guard `web`). Nenhum token é devolvido no corpo.
-- Requisições de login/registro/logout precisam vir do frontend (`Origin`/`Referer` = `localhost`), senão 400.
-- Fluxo do frontend:
-  1. `GET /sanctum/csrf-cookie`
-  2. `POST /api/login` (ou `/api/register`) com o header `X-XSRF-TOKEN` (valor do cookie `XSRF-TOKEN`) e `credentials: 'include'`
-     (com axios: `withCredentials: true` e `withXSRFToken: true`)
-  3. Chamadas seguintes só com o cookie. Sem o header CSRF a API responde 419.
-- Postman/curl: mande o header `Referer: http://localhost` e faça o passo 1 antes.
-- Verifiquei esse fluxo com o servidor rodando e `curl` (csrf-cookie → 419 sem header → 201 com header → `/api/user` → logout → 401).
+### Infraestrutura e documentação
+- Compose com containers separados para proxy Nginx, frontend, API e MySQL.
+- Volume persistente para imagens públicas e volume separado para dados MySQL.
+- Nginx do frontend corrigido e copiado para a imagem final.
+- Limites de upload alinhados entre Nginx e PHP.
+- `Dockerfile.dev` usa `artisan serve` somente no ambiente local; `api/Dockerfile` usa FrankenPHP para produção.
+- `README.md` da raiz e `api/README.md` atualizados com instalação, arquitetura, regras e autenticação.
+- Swagger UI em `/docs/` e especificação OpenAPI em `/openapi.yaml`.
+- GitHub Actions executa a suíte Laravel com MySQL e o build do frontend.
 
-## 5. Estoque no carrinho
-- `CartItemResource` ganhou `exceeds_stock` (disponível, mas quantidade > estoque atual).
-- `CartResource` ganhou `has_items_exceeding_stock`.
+## Regras de negócio importantes
 
-## 6. Pedidos (novo)
-| Rota | Quem |
-|---|---|
-| `GET/POST /api/addresses`, `PUT/PATCH/DELETE /api/addresses/{id}` | autenticado (só os próprios) |
-| `POST /api/orders` `{address_id}` | autenticado |
-| `GET /api/orders`, `GET /api/orders/{id}` | dono (admin vê qualquer um) |
-| `POST /api/orders/{id}/pay` | só o dono |
-| `POST /api/orders/{id}/cancel` | dono ou admin |
-| `GET /api/admin/orders?status=`, `GET /api/admin/orders/{id}` | admin |
-| `PATCH /api/admin/orders/{id}/status` `{status: shipped|delivered|cancelled}` | admin |
-| `PATCH /api/admin/products/{id}/stock` `{stock}` | admin |
+- Preços e totais são calculados em centavos inteiros; recursos monetários retornam valores decimais em string.
+- Produtos inativos ou indisponíveis não entram no total do carrinho; checkout bloqueia produto inativo ou estoque insuficiente.
+- Frete fixo: R$ 29,90.
+- Pedido nasce em `pending_payment`; pagamento é simulado.
+- Transições: `pending_payment → paid | cancelled`, `paid → shipped`, `shipped → delivered`.
+- Cancelamento permitido restaura o estoque.
+- Usuários acessam apenas seus próprios endereços e pedidos; administrador acessa rotas administrativas.
+- O cookie de sessão é host-only no Docker local. Em produção com HTTPS, configurar `SESSION_SECURE_COOKIE=true` e o domínio real em `SANCTUM_STATEFUL_DOMAINS`.
 
-Regras (`OrderService`, tudo em transação, produtos travados em ordem de id):
-- Carrinho vazio, endereço que não é do usuário, produto inativo ou sem estoque suficiente: **422** (a mensagem cita o produto). Nada é gravado.
-- Cria o pedido `pending_payment`, baixa o estoque, congela `product_name` e `unit_price`, esvazia o carrinho.
-- Frete fixo de **R$ 29,90** (mesmo valor do `OrderSeeder`). Documente no README.
-- Transições: `pending_payment → paid | cancelled`, `paid → shipped`, `shipped → delivered`. Qualquer outra: **409**.
-- Pagar cria o `Payment` (método `simulated`, `paid_at` agora). `paid` só pelo `/pay`; o endpoint de status do admin recusa `paid` (422).
-- Cancelar devolve o estoque (inclusive de produto apagado logicamente).
-- Pedido de outro usuário: **403**. Endereço usado em pedido não pode ser excluído (422).
+## Testes e verificação
 
-## 7. Formato de erro único (`bootstrap/app.php`)
-- `{ "message": "..." }` para 401, 403, 404, 409 e demais; `{ "message", "errors": {...} }` para 422.
-- 404 não vaza nome de model (`Resource not found.`).
-- Cobre também o 419 (CSRF) e o 400 do login sem origem do frontend.
+- A suíte automatizada inclui testes de autenticação, perfil, catálogo, permissões administrativas, carrinho, endereços, pedidos, estoque e erros.
+- Há um teste de regressão para dois clientes disputando a última unidade: somente um pedido é criado.
+- O workflow de CI executa testes Laravel em MySQL e `npm run build` no frontend.
+- O último workflow completo consultado concluiu com sucesso para backend e frontend. Alterações posteriores também acionaram novas execuções; consultar a aba Actions para o resultado do commit mais recente.
+- O teste de checkout cobre concorrência pelo bloqueio transacional/estoque em requisições sequenciais. Uma simulação de requisições realmente paralelas continua sendo uma validação adicional de integração recomendada.
 
-## 8. Estoque no admin
-- Endpoint dedicado `PATCH /api/admin/products/{id}/stock` (`stock` inteiro de 0 a 1.000.000; funciona em produto inativo; usa lock).
-- O `PUT` do produto continua podendo alterar o estoque.
+## Observações
 
-## 9. Compose e `.env.example`
-- `compose.yaml` (serviço `api`) e `api/.env.example` ganharam `APP_URL`, `SESSION_DRIVER`, `SESSION_DOMAIN`, `SESSION_SAME_SITE`,
-  `SESSION_SECURE_COOKIE` e `SANCTUM_STATEFUL_DOMAINS=localhost`.
-- Em produção (HTTPS e domínio real): `SESSION_SECURE_COOKIE=true` e `SANCTUM_STATEFUL_DOMAINS=<domínio do frontend>`.
-
-## Testes
-- 159 testes, 549 asserções, todos passando (rodei em SQLite; seu `phpunit.xml` usa o MySQL `velmora_test` dentro do Docker, que precisa existir com permissão).
-- Novos: `AuthTest` (cookie), `AddressTest`, `OrderTest`, `AdminOrderTest`, `AdminStockTest`, `CartTotalsTest`, `CatalogTest`, `ErrorFormatTest`, `Unit/MoneyTest`
-  e o helper `Concerns/CreatesCatalog`. Também estão aqui `CategoryTest`, `CharacteristicTest` e `ProductTest`.
-- `CartControllerTest` só mudou a estrutura esperada do merge (`data` + `adjustments`).
-
-## Para o README
-Frete fixo; item indisponível fora do total; regra de fusão (soma limitada ao estoque, aviso em `adjustments`, carrinho de visitante apagado);
-token de visitante gerado pela API e enviado em `X-Guest-Token`; login por cookie com CSRF.
-
-## Continua pendente
-Swagger/openapi, README, frontend, volume de uploads, `Dockerfile.dev` (ainda `artisan serve`) e edição do perfil (`PUT /api/user`).
+- O pagamento continua demonstrativo; não existe gateway real integrado.
+- O frontend cobre vitrine, carrinho, conta e checkout. A gestão administrativa está disponível pela API e Swagger, mas não há painel administrativo visual completo.
+- Para rodar localmente, siga o README da raiz e defina `SEEDER_DEFAULT_PASSWORD` no `api/.env`.
