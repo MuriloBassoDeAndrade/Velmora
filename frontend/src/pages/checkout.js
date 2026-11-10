@@ -1,4 +1,4 @@
-export async function openCheckout() { {
+export async function openCheckout(ctx, ) {
   const { requireAuth, addressesApi, unwrap, createCheckoutDialog, esc, addressFieldsMarkup, cartDialog, notify } = ctx;
   if (!requireAuth()) return;
   try {
