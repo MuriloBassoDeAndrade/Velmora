@@ -2,6 +2,10 @@ import { renderHome as renderHomePage } from "./pages/home.js";
 import { renderProducts as renderProductsPage } from "./pages/products.js";
 import { renderRegister as renderRegisterPage } from "./pages/register.js";
 import { renderNotFound } from "./pages/404.js";
+import { addressCard as renderAddressCard, addressForm as renderAddressForm } from "./pages/profile.js";
+import { productAdminForm as renderProductAdminForm, categoryAdminForm as renderCategoryAdminForm } from "./pages/admin.js";
+import { createCheckoutDialog as buildCheckoutDialog, addressFieldsMarkup as buildAddressFieldsMarkup } from "./pages/checkout.js";
+
 import { renderProduct as renderProductPage } from "./pages/product.js";
 import { renderOrders as renderOrdersPage } from "./pages/orders.js";
 import { renderOrder as renderOrderPage } from "./pages/order.js";
@@ -98,50 +102,6 @@ function requireAuth() {
   accountDialog.showModal();
   return false;
 }
-function addressCard(address) {
-  return '<article class="address-card"><div><strong>' + esc(address.recipient_name) + '</strong><p>' + esc(address.street) + ', ' + esc(address.number) + ' — ' + esc(address.city) + '/' + esc(address.state) + '</p><small>CEP ' + esc(address.cep) + '</small></div><div class="inline-actions"><button class="text-link" data-edit-address="' + address.id + '">Editar</button><button class="text-link danger-text" data-delete-address="' + address.id + '">Excluir</button></div></article>';
-}
-function addressForm(address = {}) {
-  return '<form id="addressForm" class="form-grid compact-form"><input type="hidden" name="id" value="' + (address.id || "") + '">' +
-    '<label>Destinatário<input name="recipient_name" required maxlength="100" value="' + esc(address.recipient_name) + '"></label>' +
-    '<label>Rua<input name="street" required maxlength="150" value="' + esc(address.street) + '"></label>' +
-    '<label>Número<input name="number" required maxlength="20" value="' + esc(address.number) + '"></label>' +
-    '<label>Complemento<input name="complement" maxlength="100" value="' + esc(address.complement) + '"></label>' +
-    '<label>Bairro<input name="neighborhood" required maxlength="100" value="' + esc(address.neighborhood) + '"></label>' +
-    '<label>Cidade<input name="city" required maxlength="100" value="' + esc(address.city) + '"></label>' +
-    '<label>Estado (UF)<input name="state" required minlength="2" maxlength="2" value="' + esc(address.state) + '"></label>' +
-    '<label>CEP<input name="cep" required placeholder="12345-678" value="' + esc(address.cep) + '"></label>' +
-    '<div class="form-actions"><button class="solid-btn" type="submit">Salvar endereço</button><button class="outline-btn" type="button" data-cancel-address>Cancelar</button></div></form>';
-}
-function productAdminForm(product = {}) {
-  return '<form id="adminProductForm" class="admin-editor" enctype="multipart/form-data"><div class="panel-title-row"><h3>' + (product.id ? "Editar produto #" + product.id : "Cadastrar produto") + '</h3><button type="button" class="icon-btn" data-close-editor="productEditor">×</button></div>' +
-    '<input type="hidden" name="id" value="' + (product.id || "") + '">' +
-    '<div class="form-grid"><label>Nome<input name="name" required maxlength="255" value="' + esc(product.name) + '"></label><label>Marca<input name="brand" required maxlength="255" value="' + esc(product.brand) + '"></label>' +
-    '<label>Preço (R$)<input name="price" type="number" min="0" step="0.01" required value="' + esc(product.price) + '"></label><label>Estoque<input name="stock" type="number" min="0" required value="' + (product.stock ?? 0) + '"></label>' +
-    '<label>Categoria<select name="category_id" required><option value="">Selecione</option>' + categories.map((c) => '<option value="' + c.id + '"' + (Number(product.category?.id || product.category_id) === c.id ? " selected" : "") + '>' + esc(c.name) + '</option>').join("") + '</select></label>' +
-    '<label>Características<select name="characteristics_id" required><option value="">Selecione</option>' + characteristics.map((c) => '<option value="' + c.id + '"' + (Number(product.characteristics?.id || product.characteristics_id) === c.id ? " selected" : "") + '>#' + c.id + ' · ' + esc(c.gender || c.movement_type || "Características") + '</option>').join("") + '</select></label>' +
-    '<label>Imagem do produto (JPG, PNG ou WEBP; até 5 MB)<input name="image" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"></label><label>URL de imagem (opcional)<input name="image_url" type="url" value="' + esc(product.image_url) + '"></label>' +
-    '<label class="wide">Descrição<textarea name="description" rows="3">' + esc(product.description) + '</textarea></label><label>Status<select name="active"><option value="1"' + (product.active !== false && product.active !== 0 ? " selected" : "") + '>Ativo</option><option value="0"' + (product.active === false || product.active === 0 ? " selected" : "") + '>Inativo</option></select></label></div>' +
-    '<div class="form-actions"><button class="solid-btn" type="submit">Salvar produto</button><button class="outline-btn" type="button" data-close-editor="productEditor">Cancelar</button></div></form>';
-}
-function categoryAdminForm(category = {}) {
-  return '<form id="adminCategoryForm" class="admin-editor"><div class="panel-title-row"><h3>' + (category.id ? "Editar categoria" : "Nova categoria") + '</h3><button type="button" class="icon-btn" data-close-editor="categoryEditor">×</button></div><input type="hidden" name="id" value="' + (category.id || "") + '">' +
-    '<div class="form-grid"><label>Nome<input name="name" required maxlength="255" value="' + esc(category.name) + '"></label><label>Slug<input name="slug" required maxlength="255" pattern="[a-z0-9-]+" value="' + esc(category.slug) + '"></label></div><div class="form-actions"><button class="solid-btn">Salvar categoria</button><button type="button" class="outline-btn" data-close-editor="categoryEditor">Cancelar</button></div></form>';
-}
-function createCheckoutDialog() {
-  let dialog = document.getElementById("checkoutDialog");
-  if (!dialog) {
-    dialog = document.createElement("dialog");
-    dialog.id = "checkoutDialog";
-    dialog.className = "modal";
-    dialog.innerHTML = '<div class="modal-head"><h2>Finalizar pedido</h2><button class="icon-btn" data-close="checkoutDialog">×</button></div><div class="modal-body" id="checkoutContent"></div>';
-    document.body.append(dialog);
-  }
-  return dialog;
-}
-function addressFieldsMarkup() {
-  return '<label>Destinatário<input name="recipient_name" required maxlength="100"></label><label>Rua<input name="street" required maxlength="150"></label><label>Número<input name="number" required maxlength="20"></label><label>Complemento<input name="complement" maxlength="100"></label><label>Bairro<input name="neighborhood" required maxlength="100"></label><label>Cidade<input name="city" required maxlength="100"></label><label>Estado (UF)<input name="state" required minlength="2" maxlength="2"></label><label>CEP<input name="cep" required placeholder="12345-678"></label>';
-}
 async function finishLogin(payload) {
   currentUser = payload.user;
   clearGuestToken();
@@ -184,6 +144,12 @@ const context = {
   openCheckout: (...args) => openCheckout(context, ...args),
   renderRoute: (...args) => renderRoute(context, ...args),
 };
+function addressCard(address) { return renderAddressCard(context, address); }
+function addressForm(address) { return renderAddressForm(context, address); }
+function productAdminForm(product) { return renderProductAdminForm(context, product); }
+function categoryAdminForm(category) { return renderCategoryAdminForm(context, category); }
+function createCheckoutDialog() { return buildCheckoutDialog(); }
+function addressFieldsMarkup() { return buildAddressFieldsMarkup(); }
 function renderHome(...args) { return renderHomePage(context, ...args); }
 function renderProduct(...args) { return renderProductPage(context, ...args); }
 function renderOrders(...args) { return renderOrdersPage(context, ...args); }
