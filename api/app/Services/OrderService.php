@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Support\Money;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
@@ -188,13 +189,24 @@ class OrderService
     }
 
     /** Uso do admin: avançar o status respeitando as transições válidas. */
-    public function updateStatus(int $id, string $newStatus): Order
+    public function updateStatus(int $id, string $newStatus, ?int $adminId = null): Order
     {
-        return DB::transaction(function () use ($id, $newStatus) {
+        $fromStatus = null;
+        $order = DB::transaction(function () use ($id, $newStatus, &$fromStatus) {
             $order = Order::query()->lockForUpdate()->findOrFail($id);
+            $fromStatus = $order->status;
 
             return $this->transition($order, $newStatus);
         }, 3);
+
+        Log::info('Admin updated order status.', [
+            'admin_id' => $adminId,
+            'order_id' => $order->id,
+            'from_status' => $fromStatus,
+            'to_status' => $order->status,
+        ]);
+
+        return $order;
     }
 
     private function authorizeAccess(User $user, Order $order): void
