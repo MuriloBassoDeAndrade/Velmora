@@ -2,6 +2,12 @@ import { api, clearGuestToken } from "./api/http.js";
 import { money, escapeHtml as esc } from "./utils/format.js";
 import { productCard, productImage } from "./components/productCard.js";
 import { updateHeaderSession } from "./components/header.js";
+import * as authApi from "./api/auth.js";
+import * as productApi from "./api/products.js";
+import * as cartApi from "./api/cart.js";
+import * as ordersApi from "./api/orders.js";
+import * as addressesApi from "./api/addresses.js";
+import * as adminApi from "./api/admin.js";
 
 const app = document.getElementById("app");
 const cartDialog = document.getElementById("cartDialog");
@@ -35,7 +41,7 @@ function updateCartCount() {
 }
 async function loadCart() {
   try {
-    cart = unwrap(await api("/api/cart"));
+    cart = unwrap(await cartApi.getCart());
     updateCartCount();
   } catch (error) {
     console.error(error);
@@ -43,7 +49,7 @@ async function loadCart() {
 }
 async function restoreSession() {
   try {
-    currentUser = await api("/api/user");
+    currentUser = await authApi.getCurrentUser();
   } catch {
     currentUser = null;
   }
@@ -63,7 +69,7 @@ function navigate(path) {
 }
 function currentPath() { return window.location.pathname.replace(/\/+$/, "") || "/"; }
 async function fetchCategories() {
-  const payload = await api("/api/categories");
+  const payload = await productApi.listCategories();
   categories = unwrap(payload) || [];
   return categories;
 }
@@ -78,7 +84,7 @@ async function renderHome(params = new URLSearchParams(location.search)) {
     const query = new URLSearchParams({ sort, page: String(page) });
     if (search) query.set("search", search);
     if (category) query.set("category", category);
-    const payload = await api("/api/products?" + query.toString());
+    const payload = await productApi.listProducts(Object.fromEntries(query.entries()));
     const items = payload.data || [];
     const meta = payload.meta || { current_page: 1, last_page: 1 };
     app.innerHTML = '<section class="hero"><div class="hero-copy"><p class="eyebrow">TEMPO, ESTILO E PRECISÃO</p><h1>O tempo revela<br><em>o que importa.</em></h1><p>Uma curadoria de relógios para acompanhar a sua história.</p><a class="solid-btn" href="#catalogo" data-scroll>Explorar coleção</a></div><div class="hero-art"><div class="hero-orbit"></div><div class="hero-watch"><span>VELMORA</span><i></i><b></b><small>12</small></div><p>DESDE 2026 · CURADORIA DE TEMPO</p></div></section>' +
@@ -94,7 +100,7 @@ async function renderHome(params = new URLSearchParams(location.search)) {
 async function renderProduct(id) {
   loading("Carregando produto...");
   try {
-    const product = unwrap(await api("/api/products/" + id));
+    const product = unwrap(await productApi.getProduct(id));
     const unavailable = !product || !product.active || Number(product.stock) < 1;
     app.innerHTML = '<div class="breadcrumb"><a href="/" data-link>Loja</a><span>/</span><span>' + esc(product.name) + '</span></div>' +
       '<section class="product-detail"><div class="detail-visual">' + productImage(product) + '</div><div class="detail-copy"><p class="eyebrow">' + esc(product.brand) + ' · ' + esc(product.category?.name || "Relógio") + '</p><h1>' + esc(product.name) + '</h1>' +
@@ -109,7 +115,7 @@ async function renderOrders() {
   if (!requireAuth()) return;
   loading("Buscando seus pedidos...");
   try {
-    const payload = await api("/api/orders");
+    const payload = await ordersApi.listOrders();
     const orders = payload.data || [];
     app.innerHTML = '<section class="page-heading"><p class="eyebrow">SUA CONTA</p><h1>Meus pedidos</h1><p>Acompanhe suas compras e consulte os detalhes de cada pedido.</p></section>' +
       (orders.length ? '<div class="table-wrap"><table><thead><tr><th>Pedido</th><th>Data</th><th>Total</th><th>Status</th><th></th></tr></thead><tbody>' +
@@ -124,7 +130,7 @@ async function renderOrder(id) {
   if (!requireAuth()) return;
   loading("Carregando pedido...");
   try {
-    const order = unwrap(await api("/api/orders/" + id));
+    const order = unwrap(await ordersApi.getOrder(id));
     app.innerHTML = '<div class="breadcrumb"><a href="/pedidos" data-link>Meus pedidos</a><span>/</span><span>Pedido #' + order.id + '</span></div>' +
       '<section class="page-heading"><p class="eyebrow">DETALHES DA COMPRA</p><h1>Pedido #' + order.id + '</h1><p><span class="status-pill status-' + esc(order.status) + '">' + statusLabel(order.status) + '</span> · ' + new Date(order.created_at).toLocaleString("pt-BR") + '</p></section>' +
       '<div class="order-layout"><section class="panel"><h2>Itens do pedido</h2>' + (order.items || []).map((item) => '<div class="order-line"><div><strong>' + esc(item.product_name) + '</strong><span>' + item.quantity + ' × ' + money(item.unit_price) + '</span></div><strong>' + money(item.subtotal) + '</strong></div>').join("") +
@@ -146,7 +152,7 @@ async function renderProfile() {
   if (!requireAuth()) return;
   loading("Carregando seu perfil...");
   try {
-    const addresses = unwrap(await api("/api/addresses")) || [];
+    const addresses = unwrap(await addressesApi.listAddresses()) || [];
     app.innerHTML = '<section class="page-heading"><p class="eyebrow">SUA CONTA</p><h1>Perfil e endereços</h1><p>Atualize seus dados e mantenha seus endereços de entrega.</p></section>' +
       '<div class="profile-grid"><section class="panel"><h2>Dados pessoais</h2><form id="profileForm" class="form-grid"><label>Nome<input name="name" required maxlength="50" value="' + esc(currentUser.name) + '"></label><label>E-mail<input name="email" type="email" required value="' + esc(currentUser.email) + '"></label><label>Senha atual <small>(necessária para trocar a senha)</small><input name="current_password" type="password" autocomplete="current-password"></label><label>Nova senha<input name="password" type="password" minlength="8" autocomplete="new-password"></label><label>Confirmar nova senha<input name="password_confirmation" type="password" minlength="8" autocomplete="new-password"></label><button class="solid-btn" type="submit">Salvar alterações</button></form></section>' +
       '<section class="panel"><div class="panel-title-row"><h2>Endereços</h2><button class="outline-btn" data-new-address>Adicionar</button></div><div class="address-list">' +
@@ -174,7 +180,7 @@ async function renderAdmin() {
   loading("Carregando painel administrativo...");
   try {
     const [productsPayload, categoriesPayload, charsPayload, ordersPayload] = await Promise.all([
-      api("/api/admin/products"), api("/api/categories"), api("/api/characteristics"), api("/api/admin/orders"),
+      adminApi.listAdminProducts(), api("/api/categories"), adminApi.listCharacteristics(), adminApi.listAdminOrders(),
     ]);
     const products = productsPayload.data || [];
     categories = unwrap(categoriesPayload) || [];
@@ -308,7 +314,7 @@ document.addEventListener("click", async (event) => {
     try {
       const form = document.getElementById("addProductForm");
       const data = Object.fromEntries(new FormData(form).entries());
-      cart = unwrap(await api("/api/cart/items", { method: "POST", body: JSON.stringify({ product_id: Number(data.product_id), quantity: Number(data.quantity) }) }));
+      cart = unwrap(await cartApi.addCartItem({ product_id: Number(data.product_id), quantity: Number(data.quantity) }));
       updateCartCount(); notify("Produto adicionado ao carrinho.");
     } catch (error) { notify(error.message, "error"); }
   }
@@ -321,19 +327,19 @@ document.addEventListener("click", async (event) => {
     const quantity = action === "plus" ? item.quantity + 1 : action === "minus" ? item.quantity - 1 : 0;
     try {
       const result = action === "remove" || quantity < 1
-        ? await api("/api/cart/items/" + id, { method: "DELETE" })
-        : await api("/api/cart/items/" + id, { method: "PUT", body: JSON.stringify({ quantity }) });
+        ? await cartApi.removeCartItem(id)
+        : await cartApi.updateCartItem(id, { quantity });
       cart = unwrap(result); await openCart(); updateCartCount();
     } catch (error) { notify(error.message, "error"); }
   }
   const pay = event.target.closest("[data-pay]");
   if (pay) {
-    try { await api("/api/orders/" + pay.dataset.pay + "/pay", { method: "POST" }); notify("Pagamento simulado registrado."); renderOrder(pay.dataset.pay); }
+    try { await ordersApi.payOrder(pay.dataset.pay); notify("Pagamento simulado registrado."); renderOrder(pay.dataset.pay); }
     catch (error) { notify(error.message, "error"); }
   }
   const cancel = event.target.closest("[data-cancel-order]");
   if (cancel && confirm("Deseja cancelar este pedido? O estoque será devolvido.")) {
-    try { await api("/api/orders/" + cancel.dataset.cancelOrder + "/cancel", { method: "POST" }); notify("Pedido cancelado."); renderOrder(cancel.dataset.cancelOrder); }
+    try { await ordersApi.cancelOrder(cancel.dataset.cancelOrder); notify("Pedido cancelado."); renderOrder(cancel.dataset.cancelOrder); }
     catch (error) { notify(error.message, "error"); }
   }
   if (event.target.closest("[data-new-address]")) document.getElementById("addressEditor").innerHTML = addressForm();
@@ -344,14 +350,14 @@ document.addEventListener("click", async (event) => {
   }
   const deleteAddress = event.target.closest("[data-delete-address]");
   if (deleteAddress && confirm("Excluir este endereço?")) {
-    try { await api("/api/addresses/" + deleteAddress.dataset.deleteAddress, { method: "DELETE" }); notify("Endereço excluído."); renderProfile(); }
+    try { await addressesApi.deleteAddress(deleteAddress.dataset.deleteAddress); notify("Endereço excluído."); renderProfile(); }
     catch (error) { notify(error.message, "error"); }
   }
   if (event.target.closest("[data-cancel-address]")) document.getElementById("addressEditor").innerHTML = "";
   if (event.target.closest("[data-new-product]")) document.getElementById("productEditor").innerHTML = productAdminForm();
   const editProduct = event.target.closest("[data-edit-product]");
   if (editProduct) {
-    try { const product = unwrap(await api("/api/admin/products/" + editProduct.dataset.editProduct)); document.getElementById("productEditor").innerHTML = productAdminForm(product); }
+    try { const product = unwrap(await adminApi.getAdminProduct(editProduct.dataset.editProduct)); document.getElementById("productEditor").innerHTML = productAdminForm(product); }
     catch (error) { notify(error.message, "error"); }
   }
   if (event.target.closest("[data-new-category]")) document.getElementById("categoryEditor").innerHTML = categoryAdminForm();
@@ -364,23 +370,23 @@ document.addEventListener("click", async (event) => {
   if (closeEditor) document.getElementById(closeEditor.dataset.closeEditor).innerHTML = "";
   const deleteProduct = event.target.closest("[data-delete-product]");
   if (deleteProduct && confirm("Excluir logicamente este produto? Pedidos antigos serão preservados.")) {
-    try { await api("/api/products/" + deleteProduct.dataset.deleteProduct, { method: "DELETE" }); notify("Produto excluído."); renderAdmin(); }
+    try { await adminApi.deleteProduct(deleteProduct.dataset.deleteProduct); notify("Produto excluído."); renderAdmin(); }
     catch (error) { notify(error.message, "error"); }
   }
   const deleteCategory = event.target.closest("[data-delete-category]");
   if (deleteCategory && confirm("Excluir esta categoria?")) {
-    try { await api("/api/categories/" + deleteCategory.dataset.deleteCategory, { method: "DELETE" }); notify("Categoria excluída."); renderAdmin(); }
+    try { await adminApi.deleteCategory(deleteCategory.dataset.deleteCategory); notify("Categoria excluída."); renderAdmin(); }
     catch (error) { notify(error.message, "error"); }
   }
   const orderStatus = event.target.closest("[data-order-status]");
   if (orderStatus) {
-    try { await api("/api/admin/orders/" + orderStatus.dataset.orderStatus + "/status", { method: "PATCH", body: JSON.stringify({ status: orderStatus.dataset.nextStatus }) }); notify("Status do pedido atualizado."); renderAdmin(); }
+    try { await adminApi.updateOrderStatus(orderStatus.dataset.orderStatus, orderStatus.dataset.nextStatus); notify("Status do pedido atualizado."); renderAdmin(); }
     catch (error) { notify(error.message, "error"); }
   }
 });
 document.getElementById("accountContent").addEventListener("click", async (event) => {
   if (event.target.closest("#logoutButton")) {
-    try { await api("/api/logout", { method: "POST" }); currentUser = null; clearGuestToken(); setSessionUI(); accountDialog.close(); await loadCart(); notify("Sessão encerrada."); if (currentPath() !== "/") navigate("/"); }
+    try { await authApi.logout(); currentUser = null; clearGuestToken(); setSessionUI(); accountDialog.close(); await loadCart(); notify("Sessão encerrada."); if (currentPath() !== "/") navigate("/"); }
     catch (error) { notify(error.message, "error"); }
   }
 });
@@ -390,7 +396,7 @@ document.getElementById("accountContent").addEventListener("submit", async (even
   const data = Object.fromEntries(new FormData(event.target).entries());
   try {
     const isRegister = Boolean(data.name);
-    const payload = await api(isRegister ? "/api/register" : "/api/login", { method: "POST", body: JSON.stringify(data) });
+    const payload = await (isRegister ? authApi.register(data) : authApi.login(data));
     await finishLogin(payload);
   } catch (error) { notify(error.message, "error"); }
 });
@@ -413,42 +419,42 @@ app.addEventListener("submit", async (event) => {
       if (!addressId) {
         const addressData = Object.fromEntries(new FormData(form).entries());
         delete addressData.address_id;
-        const address = unwrap(await api("/api/addresses", { method: "POST", body: JSON.stringify(addressData) }));
+        const address = unwrap(await addressesApi.createAddress(addressData));
         addressId = address.id;
       }
-      const order = unwrap(await api("/api/orders", { method: "POST", body: JSON.stringify({ address_id: Number(addressId) }) }));
+      const order = unwrap(await ordersApi.createOrder({ address_id: Number(addressId) }));
       document.getElementById("checkoutDialog").close();
       await loadCart(); notify("Pedido criado. Confirme o pagamento simulado.");
       navigate("/pedido/" + order.id);
     } else if (form.id === "profileForm") {
       const data = Object.fromEntries(new FormData(form).entries());
       Object.keys(data).forEach((key) => { if (!data[key]) delete data[key]; });
-      currentUser = await api("/api/user", { method: "PUT", body: JSON.stringify(data) });
+      currentUser = await authApi.updateProfile(data);
       setSessionUI(); notify("Perfil atualizado."); renderProfile();
     } else if (form.id === "addressForm") {
       const data = Object.fromEntries(new FormData(form).entries());
       const id = data.id; delete data.id;
-      await api(id ? "/api/addresses/" + id : "/api/addresses", { method: id ? "PUT" : "POST", body: JSON.stringify(data) });
+      await (id ? addressesApi.updateAddress(id, data) : addressesApi.createAddress(data));
       notify("Endereço salvo."); renderProfile();
     } else if (form.id === "adminProductForm") {
       const formData = new FormData(form);
       const id = formData.get("id");
       formData.delete("id");
       if (id) formData.append("_method", "PUT");
-      await api(id ? "/api/products/" + id : "/api/products", { method: "POST", body: formData });
+      await (id ? adminApi.updateProduct(id, formData) : adminApi.createProduct(formData));
       notify("Produto salvo."); renderAdmin();
     } else if (form.id === "adminCategoryForm") {
       const data = Object.fromEntries(new FormData(form).entries());
       const id = data.id; delete data.id;
-      await api(id ? "/api/categories/" + id : "/api/categories", { method: id ? "PUT" : "POST", body: JSON.stringify(data) });
+      await (id ? adminApi.updateCategory(id, data) : adminApi.createCategory(data));
       notify("Categoria salva."); renderAdmin();
     } else if (form.matches("[data-stock-form]")) {
       const data = Object.fromEntries(new FormData(form).entries());
-      await api("/api/admin/products/" + form.dataset.stockForm + "/stock", { method: "PATCH", body: JSON.stringify({ stock: Number(data.stock) }) });
+      await adminApi.updateProductStock(form.dataset.stockForm, Number(data.stock));
       notify("Estoque atualizado.");
     } else if (form.id === "adminOrderFilter") {
       const status = new FormData(form).get("status");
-      const payload = await api("/api/admin/orders" + (status ? "?status=" + encodeURIComponent(status) : ""));
+      const payload = await adminApi.listAdminOrders(status ? { status } : {});
       const rows = payload.data || [];
       const tbody = document.querySelector("#admin-orders tbody");
       if (tbody) tbody.innerHTML = rows.map((o) => '<tr><td>#' + o.id + '</td><td>' + esc(o.user?.name || o.user?.email || "Cliente") + '</td><td>' + new Date(o.created_at).toLocaleDateString("pt-BR") + '</td><td>' + money(o.total) + '</td><td>' + statusLabel(o.status) + '</td><td>' + (o.status === "paid" ? '<button class="text-link" data-order-status="' + o.id + '" data-next-status="shipped">Marcar enviado</button>' : o.status === "shipped" ? '<button class="text-link" data-order-status="' + o.id + '" data-next-status="delivered">Marcar entregue</button>' : "—") + '</td></tr>').join("");
