@@ -22,7 +22,7 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction \
     && composer check-platform-reqs --no-dev
 
 # Ativa as configurações de produção do PHP
-RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" && ln -s ../storage/app/public public/storage
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" && printf 'upload_max_filesize=6M\npost_max_size=8M\n' > "$PHP_INI_DIR/conf.d/uploads.ini" && ln -s ../storage/app/public public/storage
 
 # Configura o servidor para utilizar HTTP na porta 80
 ENV SERVER_NAME=:80
