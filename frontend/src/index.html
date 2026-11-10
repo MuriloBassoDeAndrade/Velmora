@@ -1,61 +1,32 @@
 <!doctype html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="description" content="Conheça a seleção de relógios Velmora." />
-    <title>Velmora — Relógios que marcam o seu tempo</title>
-    <link rel="icon" type="image/png" href="img/logo-mark.png" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@400;500;600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles/style.css" />
-  </head>
-  <body>
-    <header class="topbar"><div class="wrap">
-      <a href="#" class="brand" aria-label="Velmora, página inicial"><img src="img/logo-mark.png" alt="" width="40" height="40" /><span>Velmora</span></a>
-      <nav class="nav" aria-label="Principal">
-        <a href="#produtos" data-filter="all">Novidades</a><a href="#produtos" data-filter="male">Masculino</a><a href="#produtos" data-filter="female">Feminino</a><a href="#garantia">Garantia</a>
-      </nav>
-      <button class="cart-btn" id="cartButton" type="button">Carrinho (<span id="cartCount">0</span>)</button>
-        <button class="cart-btn" id="accountButton" type="button">Entrar</button>
-    </div></header>
-    <main>
-      <section class="hero"><div class="wrap"><div>
-        <h1>Relógios que marcam o seu tempo.</h1><hr class="rule" />
-        <p>Uma seleção de relógios para acompanhar cada momento.</p>
-      </div><div class="dial dial--hero" id="heroDial" role="img" aria-label="Relógio analógico mostrando a hora atual de Brasília">
-        <div class="name">VELMORA</div><div class="hand h" id="hourHand"></div><div class="hand m" id="minuteHand"></div><div class="hand s" id="secondHand"></div><div class="pin"></div>
-      </div></div></section>
-      <section id="produtos"><div class="wrap">
-        <div class="head"><h2>Novidades</h2></div>
-        <div class="filters" role="group" aria-label="Filtrar por público">
-          <button type="button" class="filter is-active" data-filter="all">Todos</button><button type="button" class="filter" data-filter="male">Masculino</button><button type="button" class="filter" data-filter="female">Feminino</button>
-        </div><div class="grid" id="productGrid" aria-live="polite"></div>
-      </div></section>
-      <section class="promise" id="garantia"><div class="wrap">
-        <div><h3>Compra segura</h3><p>Seus pedidos são processados com segurança pela plataforma.</p></div>
-        <div><h3>Atendimento</h3><p>Conte com a Velmora para esclarecer dúvidas sobre os produtos.</p></div>
-        <div><h3>Estoque atualizado</h3><p>A disponibilidade é consultada diretamente no catálogo.</p></div>
-      </div></section>
-    </main>
-    <dialog class="cart-dialog" id="cartDialog" aria-labelledby="cartTitle">
-      <div class="cart-dialog-header"><h2 id="cartTitle">Seu carrinho</h2><button id="closeCart" type="button" aria-label="Fechar carrinho">×</button></div>
-      <div id="cartContent" class="cart-content"><p class="status">Carregando carrinho...</p></div>
-      <div class="cart-dialog-footer"><strong>Total: <span id="cartTotal">R$ 0,00</span></strong><p class="meta">Frete fixo de R$ 29,90. Pagamento demonstrativo.</p><button class="add checkout-button" id="checkoutButton" type="button">Finalizar pedido</button></div>
-    </dialog>
-    <dialog class="cart-dialog account-dialog" id="accountDialog" aria-labelledby="accountTitle">
-      <div class="cart-dialog-header"><h2 id="accountTitle">Sua conta</h2><button id="closeAccount" type="button" aria-label="Fechar conta">×</button></div>
-      <div id="accountContent" class="cart-content"></div>
-    </dialog>
-    <dialog class="cart-dialog checkout-dialog" id="checkoutDialog" aria-labelledby="checkoutTitle">
-      <div class="cart-dialog-header"><h2 id="checkoutTitle">Finalizar pedido</h2><button id="closeCheckout" type="button" aria-label="Fechar checkout">×</button></div>
-      <div id="checkoutContent" class="cart-content"></div>
-    </dialog>
-    <footer><div class="wrap">
-      <img src="img/logo-velmora.png" alt="Velmora — relógios que marcam o seu tempo" width="700" height="518" />
-      <div class="footer-info"><span>© 2026 Velmora Relógios</span></div>
-    </div></footer>
-    <script type="module" src="script.js"></script>
-  </body>
-</html>
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Velmora — relógios para acompanhar cada momento."><meta name="theme-color" content="#171a18">
+  <title>Velmora — Relógios que marcam o seu tempo</title>
+  <link rel="icon" type="image/png" href="/img/logo-mark.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Jost:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles/style.css">
+</head>
+<body>
+  <header class="topbar"><div class="wrap topbar-inner">
+    <a class="brand" href="/" data-link><img src="/img/logo-mark.png" alt="" width="38" height="38"><span>Velmora</span></a>
+    <nav class="nav" aria-label="Navegação principal">
+      <a href="/" data-link>Loja</a><a href="/pedidos" data-link data-auth-link>Meus pedidos</a><a href="/perfil" data-link data-auth-link>Perfil</a><a href="/admin" data-link data-admin-link hidden>Painel</a>
+    </nav>
+    <div class="top-actions"><button class="ghost-btn" id="cartButton" type="button">Carrinho <span class="count" id="cartCount">0</span></button><button class="solid-btn" id="accountButton" type="button">Entrar</button></div>
+  </div></header>
+  <main id="app" class="wrap page-wrap" aria-live="polite"><section class="loading-state"><span class="spinner"></span><p>Carregando Velmora...</p></section></main>
+  <footer class="site-footer"><div class="wrap footer-inner">
+    <div class="footer-brand"><img src="/img/logo-velmora.png" alt="Velmora" width="190"><p>Relógios que marcam o seu tempo.</p></div>
+    <div><strong>Atendimento</strong><p>Compra demonstrativa para fins acadêmicos.</p><p>Pagamento simulado — nenhum dado de cartão é solicitado.</p></div><small>© 2026 Velmora Relógios</small>
+  </div></footer>
+  <dialog class="modal" id="cartDialog"><div class="modal-head"><h2>Seu carrinho</h2><button class="icon-btn" data-close="cartDialog" aria-label="Fechar">×</button></div>
+    <div class="modal-body" id="cartContent"></div><div class="modal-foot"><div class="total-line"><span>Total</span><strong id="cartTotal">R$ 0,00</strong></div>
+    <p class="muted">Frete fixo de R$ 29,90. O total definitivo é calculado pela API.</p><button class="solid-btn full" id="checkoutButton">Continuar para entrega</button></div>
+  </dialog>
+  <dialog class="modal" id="accountDialog"><div class="modal-head"><h2>Sua conta</h2><button class="icon-btn" data-close="accountDialog" aria-label="Fechar">×</button></div><div class="modal-body" id="accountContent"></div></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="/script.js"></script>
+</body></html>
