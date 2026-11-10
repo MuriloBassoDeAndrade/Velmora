@@ -18,6 +18,7 @@
         <a href="#produtos" data-filter="all">Novidades</a><a href="#produtos" data-filter="male">Masculino</a><a href="#produtos" data-filter="female">Feminino</a><a href="#garantia">Garantia</a>
       </nav>
       <button class="cart-btn" id="cartButton" type="button">Carrinho (<span id="cartCount">0</span>)</button>
+        <button class="cart-btn" id="accountButton" type="button">Entrar</button>
     </div></header>
     <main>
       <section class="hero"><div class="wrap"><div>
@@ -41,7 +42,15 @@
     <dialog class="cart-dialog" id="cartDialog" aria-labelledby="cartTitle">
       <div class="cart-dialog-header"><h2 id="cartTitle">Seu carrinho</h2><button id="closeCart" type="button" aria-label="Fechar carrinho">×</button></div>
       <div id="cartContent" class="cart-content"><p class="status">Carregando carrinho...</p></div>
-      <div class="cart-dialog-footer"><strong>Total: <span id="cartTotal">R$ 0,00</span></strong><p class="meta">O frete e a finalização do pedido serão calculados na etapa de checkout.</p></div>
+      <div class="cart-dialog-footer"><strong>Total: <span id="cartTotal">R$ 0,00</span></strong><p class="meta">Frete fixo de R$ 29,90. Pagamento demonstrativo.</p><button class="add checkout-button" id="checkoutButton" type="button">Finalizar pedido</button></div>
+    </dialog>
+    <dialog class="cart-dialog account-dialog" id="accountDialog" aria-labelledby="accountTitle">
+      <div class="cart-dialog-header"><h2 id="accountTitle">Sua conta</h2><button id="closeAccount" type="button" aria-label="Fechar conta">×</button></div>
+      <div id="accountContent" class="cart-content"></div>
+    </dialog>
+    <dialog class="cart-dialog checkout-dialog" id="checkoutDialog" aria-labelledby="checkoutTitle">
+      <div class="cart-dialog-header"><h2 id="checkoutTitle">Finalizar pedido</h2><button id="closeCheckout" type="button" aria-label="Fechar checkout">×</button></div>
+      <div id="checkoutContent" class="cart-content"></div>
     </dialog>
     <footer><div class="wrap">
       <img src="img/logo-velmora.png" alt="Velmora — relógios que marcam o seu tempo" width="700" height="518" />
