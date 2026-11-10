@@ -1,22 +1,25 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\\Http\\Controllers\\Api;
 
-use App\Http\Controllers\Controller;
-use App\Http\Requests\LoginRequest;
-use App\Http\Requests\RegisterRequest;
-use App\Http\Resources\CartResource;
-use App\Models\User;
-use App\Services\AuthService;
-use App\Services\CartService;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use App\\Http\\Controllers\\Controller;
+use App\\Http\\Requests\\LoginRequest;
+use App\\Http\\Requests\\RegisterRequest;
+use App\\Http\\Requests\\UpdateProfileRequest;
+use App\\Http\\Resources\\CartResource;
+use App\\Models\\User;
+use App\\Services\\AuthService;
+use App\\Services\\CartService;
+use App\\Services\\UserService;
+use Illuminate\\Http\\JsonResponse;
+use Illuminate\\Http\\Request;
 
 class AuthController extends Controller
 {
     public function __construct(
         private AuthService $authService,
         private CartService $cartService,
+        private UserService $userService,
     ) {}
 
     public function register(RegisterRequest $request): JsonResponse
@@ -58,6 +61,16 @@ class AuthController extends Controller
     public function me(Request $request): JsonResponse
     {
         return response()->json($request->user(), 200);
+    }
+
+    public function updateProfile(UpdateProfileRequest $request): JsonResponse
+    {
+        $user = $this->userService->updateProfile(
+            $request->user(),
+            $request->validated()
+        );
+
+        return response()->json($user, 200);
     }
 
     /**
