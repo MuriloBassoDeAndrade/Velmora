@@ -1,4 +1,4 @@
-export async function renderOrders(ctx, ) {
+export async function renderOrders(ctx) {
   const { requireAuth, loading, ordersApi, app, money, esc, statusLabel, errorPage } = ctx;
   if (!requireAuth()) return;
   loading("Buscando seus pedidos...");
