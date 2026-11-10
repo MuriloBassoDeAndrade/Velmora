@@ -1,7 +1,7 @@
 export async function renderRoute(ctx) {
   const { currentPath, app, renderAuthForm, renderRegister, renderProducts, renderNotFound, accountDialog, renderHome, renderProduct, openCart, openCheckout, renderOrders, renderOrder, renderProfile, renderAdmin, errorPage } = ctx;
   const path = currentPath();
-  const entryPage = document.body.dataset.page || null;
+  const entryPage = path.startsWith("/pages/") ? document.body.dataset.page : null;
 
   document.querySelectorAll(".nav a[data-link]").forEach((link) => {
     const target = link.getAttribute("href");
