@@ -509,6 +509,11 @@ app.addEventListener("submit", async (event) => {
 window.addEventListener("popstate", renderRoute);
 async function renderRoute() {
   const path = currentPath();
+  document.querySelectorAll(".nav a[data-link]").forEach((link) => {
+    const target = link.getAttribute("href");
+    const active = target === "/" ? path === "/" || path.startsWith("/produto/") : target === "/pedidos" ? path === "/pedidos" || path.startsWith("/pedido/") : target === "/perfil" ? path === "/perfil" : target === "/admin" ? path === "/admin" : false;
+    link.classList.toggle("is-active", active);
+  });
   if (path === "/") return renderHome(new URLSearchParams(location.search));
   if (path.startsWith("/produto/")) return renderProduct(path.split("/")[2]);
   if (path === "/pedidos") return renderOrders();
@@ -520,5 +525,4 @@ async function renderRoute() {
 document.getElementById("checkoutButton").addEventListener("click", openCheckout);
 document.getElementById("cartButton").addEventListener("click", openCart);
 document.getElementById("accountButton").addEventListener("click", () => { renderAuthForm(); accountDialog.showModal(); });
-document.querySelectorAll("[data-close]").forEach((button) => button.addEventListener("click", () => document.getElementById(button.dataset.close)?.close()));
 restoreSession().then(renderRoute);
