@@ -1,4 +1,4 @@
-export async function renderProfile(ctx, ) {
+export async function renderProfile(ctx) {
   const { requireAuth, loading, addressesApi, unwrap, app, esc, currentUser, addressCard, errorPage } = ctx;
   if (!requireAuth()) return;
   loading("Carregando seu perfil...");
