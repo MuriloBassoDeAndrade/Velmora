@@ -1,0 +1,14 @@
+ :root {
+  color-scheme: light;
+  --ink:#20241f; --muted:#777b72; --paper:#f7f6f1; --surface:#fff; --line:#e7e5dc;
+  --olive:#59634d; --olive-dark:#3d4936; --gold:#b79b63; --danger:#a4483e; --success:#426d50;
+  --serif:"Cormorant Garamond",Georgia,serif; --sans:"Jost",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
+button,input,select,textarea{font:inherit}
+button,a{ -webkit-tap-highlight-color:transparent}
+a{color:inherit;text-decoration:none}
+button{cursor:pointer}
+button:disabled{cursor:not-allowed;opacity:.5}
