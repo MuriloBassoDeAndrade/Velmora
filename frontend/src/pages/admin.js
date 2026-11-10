@@ -26,3 +26,22 @@ export async function renderAdmin(ctx) {
       '</tbody></table></div></section>';
   } catch (error) { errorPage(error); }
 }
+
+export function productAdminForm(ctx, product = {}) {
+  const { esc, categories, characteristics } = ctx;
+  return '<form id="adminProductForm" class="admin-editor" enctype="multipart/form-data"><div class="panel-title-row"><h3>' + (product.id ? "Editar produto #" + product.id : "Cadastrar produto") + '</h3><button type="button" class="icon-btn" data-close-editor="productEditor">×</button></div>' +
+    '<input type="hidden" name="id" value="' + (product.id || "") + '">' +
+    '<div class="form-grid"><label>Nome<input name="name" required maxlength="255" value="' + esc(product.name) + '"></label><label>Marca<input name="brand" required maxlength="255" value="' + esc(product.brand) + '"></label>' +
+    '<label>Preço (R$)<input name="price" type="number" min="0" step="0.01" required value="' + esc(product.price) + '"></label><label>Estoque<input name="stock" type="number" min="0" required value="' + (product.stock ?? 0) + '"></label>' +
+    '<label>Categoria<select name="category_id" required><option value="">Selecione</option>' + categories.map((c) => '<option value="' + c.id + '"' + (Number(product.category?.id || product.category_id) === c.id ? " selected" : "") + '>' + esc(c.name) + '</option>').join("") + '</select></label>' +
+    '<label>Características<select name="characteristics_id" required><option value="">Selecione</option>' + characteristics.map((c) => '<option value="' + c.id + '"' + (Number(product.characteristics?.id || product.characteristics_id) === c.id ? " selected" : "") + '>#' + c.id + ' · ' + esc(c.gender || c.movement_type || "Características") + '</option>').join("") + '</select></label>' +
+    '<label>Imagem do produto (JPG, PNG ou WEBP; até 5 MB)<input name="image" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"></label><label>URL de imagem (opcional)<input name="image_url" type="url" value="' + esc(product.image_url) + '"></label>' +
+    '<label class="wide">Descrição<textarea name="description" rows="3">' + esc(product.description) + '</textarea></label><label>Status<select name="active"><option value="1"' + (product.active !== false && product.active !== 0 ? " selected" : "") + '>Ativo</option><option value="0"' + (product.active === false || product.active === 0 ? " selected" : "") + '>Inativo</option></select></label></div>' +
+    '<div class="form-actions"><button class="solid-btn" type="submit">Salvar produto</button><button class="outline-btn" type="button" data-close-editor="productEditor">Cancelar</button></div></form>';
+}
+
+export function categoryAdminForm(ctx, category = {}) {
+  const { esc } = ctx;
+  return '<form id="adminCategoryForm" class="admin-editor"><div class="panel-title-row"><h3>' + (category.id ? "Editar categoria" : "Nova categoria") + '</h3><button type="button" class="icon-btn" data-close-editor="categoryEditor">×</button></div><input type="hidden" name="id" value="' + (category.id || "") + '">' +
+    '<div class="form-grid"><label>Nome<input name="name" required maxlength="255" value="' + esc(category.name) + '"></label><label>Slug<input name="slug" required maxlength="255" pattern="[a-z0-9-]+" value="' + esc(category.slug) + '"></label></div><div class="form-actions"><button class="solid-btn">Salvar categoria</button><button type="button" class="outline-btn" data-close-editor="categoryEditor">Cancelar</button></div></form>';
+}
