@@ -141,6 +141,46 @@ paths:
       responses:
         '200': { description: Produto encontrado }
         '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Administração]
+      summary: Atualiza produto
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200': { description: Produto atualizado }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    patch:
+      tags: [Administração]
+      summary: Atualiza parcialmente produto
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200': { description: Produto atualizado }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    delete:
+      tags: [Administração]
+      summary: Exclui logicamente produto
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      responses:
+        '204': { description: Produto removido }
+        '403': { $ref: '#/components/responses/Forbidden' }
   /api/categories:
     get:
       tags: [Catálogo]
