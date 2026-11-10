@@ -113,6 +113,23 @@ paths:
         '200': { description: Perfil atualizado }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '422': { $ref: '#/components/responses/ValidationError' }
+  /api/admin/products:
+    get:
+      tags: [Administração]
+      summary: Lista produtos para administração
+      security: [{ sessionCookie: [] }]
+      responses:
+        '200': { description: Produtos paginados }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/admin/products/{id}:
+    get:
+      tags: [Administração]
+      summary: Detalha produto para administração
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { description: Produto detalhado }
+        '403': { $ref: '#/components/responses/Forbidden' }
   /api/products:
     get:
       tags: [Catálogo]
@@ -133,6 +150,19 @@ paths:
           schema: { type: integer, minimum: 1 }
       responses:
         '200': { description: Lista paginada de produtos }
+    post:
+      tags: [Administração]
+      summary: Cria produto
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/CsrfHeader' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '201': { description: Produto criado }
+        '403': { $ref: '#/components/responses/Forbidden' }
   /api/products/{id}:
     get:
       tags: [Catálogo]
@@ -251,6 +281,53 @@ paths:
       parameters: [{ $ref: '#/components/parameters/CsrfHeader' }]
       responses:
         '201': { description: Características criadas }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/characteristics/{id}:
+    get:
+      tags: [Catálogo]
+      summary: Detalha características
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { description: Características }
+    put:
+      tags: [Administração]
+      summary: Atualiza características
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200': { description: Características atualizadas }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    patch:
+      tags: [Administração]
+      summary: Atualiza parcialmente características
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200': { description: Características atualizadas }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    delete:
+      tags: [Administração]
+      summary: Exclui características sem produtos associados
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      responses:
+        '204': { description: Características excluídas }
         '403': { $ref: '#/components/responses/Forbidden' }
   /api/cart:
     get:
