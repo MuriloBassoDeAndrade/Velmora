@@ -1,4 +1,4 @@
-export async function renderProduct(id) { {
+export async function renderProduct(ctx, id) {
   const { app, loading, unwrap, productApi, esc, productImage, money, errorPage } = ctx;
   loading("Carregando produto...");
   try {
