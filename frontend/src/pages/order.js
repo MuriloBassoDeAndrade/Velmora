@@ -1,4 +1,4 @@
-export async function renderOrder(id) { {
+export async function renderOrder(ctx, id) {
   const { requireAuth, loading, ordersApi, app, unwrap, esc, money, statusLabel, errorPage } = ctx;
   if (!requireAuth()) return;
   loading("Carregando pedido...");
