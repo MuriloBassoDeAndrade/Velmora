@@ -242,3 +242,210 @@ window.setInterval(tickClock, reduceMotion ? 1000 : 100);
 renderDialMarkers();
 loadProducts();
 restoreSession();
+
+
+async function restoreSession() {
+  try {
+    currentUser = await apiRequest("/api/user");
+    accountButton.textContent = currentUser.name;
+  } catch {
+    currentUser = null;
+    accountButton.textContent = "Entrar";
+  }
+  await loadCart();
+}
+
+function renderAuthForm(mode = "login") {
+  if (currentUser) {
+    accountContent.innerHTML =
+      '<p class="account-greeting">Conectado como <strong>' + escapeHtml(currentUser.email) + '</strong></p>' +
+      '<form id="profileForm" class="account-form">' +
+      '<label>Nome<input name="name" maxlength="50" required value="' + escapeHtml(currentUser.name) + '"></label>' +
+      '<label>E-mail<input name="email" type="email" required value="' + escapeHtml(currentUser.email) + '"></label>' +
+      '<button class="add" type="submit">Salvar perfil</button></form>' +
+      '<button class="account-link" type="button" id="logoutButton">Sair da conta</button>';
+    return;
+  }
+
+  const registering = mode === "register";
+  accountContent.innerHTML =
+    '<form id="' + (registering ? "registerForm" : "loginForm") + '" class="account-form">' +
+    (registering ? '<label>Nome<input name="name" maxlength="50" required autocomplete="name"></label>' : '') +
+    '<label>E-mail<input name="email" type="email" required autocomplete="email"></label>' +
+    '<label>Senha<input name="password" type="password" minlength="8" required autocomplete="' + (registering ? "new-password" : "current-password") + '"></label>' +
+    (registering ? '<label>Confirmar senha<input name="password_confirmation" type="password" minlength="8" required autocomplete="new-password"></label>' : '') +
+    '<button class="add" type="submit">' + (registering ? "Criar conta" : "Entrar") + '</button></form>' +
+    '<button class="account-link" type="button" data-auth-mode="' + (registering ? "login" : "register") + '">' +
+    (registering ? "Já tenho uma conta" : "Criar uma conta") + '</button>';
+}
+
+async function finishLogin(payload) {
+  currentUser = payload.user;
+  localStorage.removeItem(GUEST_TOKEN_KEY);
+  accountButton.textContent = currentUser.name;
+  accountDialog.close();
+  await loadCart();
+  if (payload.adjustments && payload.adjustments.length) {
+    window.alert("Algumas quantidades do carrinho foram ajustadas ao estoque disponível.");
+  }
+}
+
+accountButton.addEventListener("click", () => {
+  renderAuthForm();
+  accountDialog.showModal();
+});
+closeAccountButton.addEventListener("click", () => accountDialog.close());
+
+accountContent.addEventListener("click", async (event) => {
+  const modeButton = event.target.closest("[data-auth-mode]");
+  if (modeButton) {
+    renderAuthForm(modeButton.dataset.authMode);
+    return;
+  }
+
+  if (event.target.closest("#logoutButton")) {
+    try {
+      await ensureCsrfCookie();
+      await apiRequest("/api/logout", { method: "POST" });
+      currentUser = null;
+      localStorage.removeItem(GUEST_TOKEN_KEY);
+      accountButton.textContent = "Entrar";
+      accountDialog.close();
+      await loadCart();
+    } catch (error) {
+      window.alert(error.message);
+    }
+  }
+});
+
+accountContent.addEventListener("submit", async (event) => {
+  const form = event.target;
+  if (!["loginForm", "registerForm", "profileForm"].includes(form.id)) return;
+  event.preventDefault();
+  const data = Object.fromEntries(new FormData(form).entries());
+
+  try {
+    await ensureCsrfCookie();
+    if (form.id === "loginForm") {
+      const payload = await apiRequest("/api/login", { method: "POST", body: JSON.stringify(data) });
+      await finishLogin(payload);
+    } else if (form.id === "registerForm") {
+      const payload = await apiRequest("/api/register", { method: "POST", body: JSON.stringify(data) });
+      await finishLogin(payload);
+    } else {
+      currentUser = await apiRequest("/api/user", { method: "PUT", body: JSON.stringify(data) });
+      accountButton.textContent = currentUser.name;
+      renderAuthForm();
+      window.alert("Perfil atualizado.");
+    }
+  } catch (error) {
+    window.alert(error.message);
+  }
+});
+
+async function openCheckout() {
+  if (!currentUser) {
+    cartDialog.close();
+    renderAuthForm();
+    accountDialog.showModal();
+    window.alert("Entre ou crie uma conta para finalizar o pedido.");
+    return;
+  }
+
+  try {
+    const payload = await apiRequest("/api/addresses");
+    const addresses = payload.data || [];
+    if (addresses.length) {
+      checkoutContent.innerHTML =
+        '<form id="existingAddressCheckout" class="account-form"><label>Endereço de entrega<select name="address_id" required>' +
+        addresses.map((address) => '<option value="' + address.id + '">' +
+          escapeHtml(address.recipient_name) + ' — ' + escapeHtml(address.street) + ', ' +
+          escapeHtml(address.number) + ' · ' + escapeHtml(address.city) + '/' + escapeHtml(address.state) +
+          '</option>').join("") +
+        '</select></label><p class="checkout-shipping">Frete: ' + formatPrice(29.90) +
+        '</p><button class="add" type="submit">Confirmar pedido</button></form>' +
+        '<button class="account-link" type="button" id="newAddressButton">Cadastrar outro endereço</button>';
+    } else {
+      renderNewAddressForm();
+    }
+    checkoutDialog.showModal();
+  } catch (error) {
+    window.alert(error.message);
+  }
+}
+
+function renderNewAddressForm() {
+  checkoutContent.innerHTML =
+    '<form id="newAddressForm" class="account-form">' +
+    '<label>Nome do destinatário<input name="recipient_name" required maxlength="100"></label>' +
+    '<label>Rua<input name="street" required maxlength="150"></label>' +
+    '<label>Número<input name="number" required maxlength="20"></label>' +
+    '<label>Complemento<input name="complement" maxlength="100"></label>' +
+    '<label>Bairro<input name="neighborhood" required maxlength="100"></label>' +
+    '<label>Cidade<input name="city" required maxlength="100"></label>' +
+    '<label>Estado (UF)<input name="state" required minlength="2" maxlength="2"></label>' +
+    '<label>CEP<input name="cep" required placeholder="12345-678"></label>' +
+    '<p class="checkout-shipping">Frete: ' + formatPrice(29.90) + '</p>' +
+    '<button class="add" type="submit">Salvar endereço e confirmar pedido</button></form>';
+}
+
+async function createOrder(addressId) {
+  await ensureCsrfCookie();
+  const payload = await apiRequest("/api/orders", {
+    method: "POST",
+    body: JSON.stringify({ address_id: Number(addressId) }),
+  });
+  const order = payload.data || payload;
+  await loadCart();
+  checkoutContent.innerHTML =
+    '<div class="order-confirmation"><h3>Pedido #' + order.id + ' criado</h3>' +
+    '<p>Total: <strong>' + formatPrice(order.total) + '</strong></p>' +
+    '<p>Status: <strong id="checkoutOrderStatus">' + escapeHtml(order.status) + '</strong></p>' +
+    '<button class="add" type="button" data-pay-order="' + order.id + '">Confirmar pagamento simulado</button></div>';
+}
+
+checkoutButton.addEventListener("click", openCheckout);
+closeCheckoutButton.addEventListener("click", () => checkoutDialog.close());
+
+checkoutContent.addEventListener("click", async (event) => {
+  if (event.target.closest("#newAddressButton")) {
+    renderNewAddressForm();
+    return;
+  }
+
+  const payButton = event.target.closest("[data-pay-order]");
+  if (payButton) {
+    try {
+      await ensureCsrfCookie();
+      const payload = await apiRequest("/api/orders/" + payButton.dataset.payOrder + "/pay", { method: "POST" });
+      const order = payload.data || payload;
+      document.getElementById("checkoutOrderStatus").textContent = order.status;
+      payButton.disabled = true;
+      payButton.textContent = "Pagamento registrado";
+    } catch (error) {
+      window.alert(error.message);
+    }
+  }
+});
+
+checkoutContent.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const form = event.target;
+  try {
+    if (form.id === "existingAddressCheckout") {
+      await createOrder(new FormData(form).get("address_id"));
+      return;
+    }
+    if (form.id === "newAddressForm") {
+      await ensureCsrfCookie();
+      const addressPayload = await apiRequest("/api/addresses", {
+        method: "POST",
+        body: JSON.stringify(Object.fromEntries(new FormData(form).entries())),
+      });
+      const address = addressPayload.data || addressPayload;
+      await createOrder(address.id);
+    }
+  } catch (error) {
+    window.alert(error.message);
+  }
+});
