@@ -1,8 +1,9 @@
 export async function renderHome(ctx, params = new URLSearchParams(location.search)) {
-  const { app, loading, fetchCategories, productApi, categories, esc, productCard, errorPage } = ctx;
+  const { app, loading, fetchCategories, productApi, esc, productCard, errorPage } = ctx;
   loading("Preparando a seleção de relógios...");
   try {
     await fetchCategories();
+    const categories = ctx.categories;
     const search = params.get("search") || "";
     const category = params.get("category") || "";
     const sort = params.get("sort") || "recent";
