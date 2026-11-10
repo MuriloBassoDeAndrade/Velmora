@@ -4,6 +4,9 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\UploadedFile;
+use RuntimeException;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -78,17 +81,66 @@ class ProductService
     }
 
     public function create(array $data): Product
-{
-    $product = Product::query()->create($data);
+    {
+        $image = $data['image'] ?? null;
+        unset($data['image']);
 
-    return $product->load(['category', 'characteristics']);
-}
+        if ($image instanceof UploadedFile) {
+            $path = Storage::disk('public')->putFile('products', $image);
+
+            if (!$path) {
+                throw new RuntimeException('Could not store product image.');
+            }
+
+            $data['image_url'] = Storage::disk('public')->url($path);
+        }
+
+        $product = Product::query()->create($data);
+
+        return $product->load(['category', 'characteristics']);
+    }
 
     public function update(int $id, array $data): Product
     {
         $product = $this->getByIdAdmin($id);
+        $image = $data['image'] ?? null;
+        unset($data['image']);
+
+        $oldImagePath = null;
+
+        if ($image instanceof UploadedFile) {
+            $oldImagePath = $this->publicStoragePath($product->image_url);
+            $path = Storage::disk('public')->putFile('products', $image);
+
+            if (!$path) {
+                throw new RuntimeException('Could not store product image.');
+            }
+
+            $data['image_url'] = Storage::disk('public')->url($path);
+        }
+
         $product->update($data);
+
+        if ($oldImagePath) {
+            Storage::disk('public')->delete($oldImagePath);
+        }
+
         return $product->load(['category', 'characteristics']);
+    }
+
+    private function publicStoragePath(?string $url): ?string
+    {
+        if (!$url) {
+            return null;
+        }
+
+        $path = parse_url($url, PHP_URL_PATH);
+
+        if (!is_string($path) || !str_starts_with($path, '/storage/')) {
+            return null;
+        }
+
+        return substr($path, strlen('/storage/'));
     }
     
     public function delete(int $id): void
