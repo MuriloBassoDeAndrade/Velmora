@@ -68,7 +68,8 @@ class ProductController extends Controller
     {
         $product = $this->productService->updateStock(
             $id,
-            $request->validated('stock')
+            $request->validated('stock'),
+            $request->user()->id
         );
 
         return new ProductResource($product);
