@@ -1,4 +1,4 @@
-export function renderAuthForm(mode = "login") { {
+export function renderAuthForm(ctx, mode = "login") {
   const { currentUser, accountContent, esc } = ctx;
   if (currentUser) {
     accountContent.innerHTML = '<div class="account-summary"><p>Conectado como</p><strong>' + esc(currentUser.name) + '</strong><span>' + esc(currentUser.email) + '</span><a class="text-link" href="/perfil" data-link>Gerenciar perfil →</a><button class="outline-btn" id="logoutButton" type="button">Sair da conta</button></div>';
