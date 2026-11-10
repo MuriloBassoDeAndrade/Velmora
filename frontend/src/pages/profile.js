@@ -10,3 +10,22 @@ export async function renderProfile(ctx) {
       (addresses.length ? addresses.map(addressCard).join("") : '<p class="muted">Nenhum endereço cadastrado.</p>') + '</div><div id="addressEditor"></div></section></div>';
   } catch (error) { errorPage(error); }
 }
+
+export function addressCard(ctx, address) {
+  const { esc } = ctx;
+  return '<article class="address-card"><div><strong>' + esc(address.recipient_name) + '</strong><p>' + esc(address.street) + ', ' + esc(address.number) + ' — ' + esc(address.city) + '/' + esc(address.state) + '</p><small>CEP ' + esc(address.cep) + '</small></div><div class="inline-actions"><button class="text-link" data-edit-address="' + address.id + '">Editar</button><button class="text-link danger-text" data-delete-address="' + address.id + '">Excluir</button></div></article>';
+}
+
+export function addressForm(ctx, address = {}) {
+  const { esc } = ctx;
+  return '<form id="addressForm" class="form-grid compact-form"><input type="hidden" name="id" value="' + (address.id || "") + '">' +
+    '<label>Destinatário<input name="recipient_name" required maxlength="100" value="' + esc(address.recipient_name) + '"></label>' +
+    '<label>Rua<input name="street" required maxlength="150" value="' + esc(address.street) + '"></label>' +
+    '<label>Número<input name="number" required maxlength="20" value="' + esc(address.number) + '"></label>' +
+    '<label>Complemento<input name="complement" maxlength="100" value="' + esc(address.complement) + '"></label>' +
+    '<label>Bairro<input name="neighborhood" required maxlength="100" value="' + esc(address.neighborhood) + '"></label>' +
+    '<label>Cidade<input name="city" required maxlength="100" value="' + esc(address.city) + '"></label>' +
+    '<label>Estado (UF)<input name="state" required minlength="2" maxlength="2" value="' + esc(address.state) + '"></label>' +
+    '<label>CEP<input name="cep" required placeholder="12345-678" value="' + esc(address.cep) + '"></label>' +
+    '<div class="form-actions"><button class="solid-btn" type="submit">Salvar endereço</button><button class="outline-btn" type="button" data-cancel-address>Cancelar</button></div></form>';
+}
