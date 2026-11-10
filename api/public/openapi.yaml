@@ -1,0 +1,511 @@
+openapi: 3.1.0
+info:
+  title: Velmora REST API
+  version: 1.0.0
+  description: |
+    API da loja Velmora. A autenticação do navegador usa sessão Laravel/Sanctum por cookie.
+    Antes de login, registro, logout ou alterações autenticadas, obtenha o cookie CSRF em
+    GET /sanctum/csrf-cookie e envie o valor decodificado de XSRF-TOKEN no header X-XSRF-TOKEN.
+servers:
+  - url: http://localhost
+    description: Ambiente Docker local
+tags:
+  - name: Autenticação
+  - name: Perfil
+  - name: Catálogo
+  - name: Carrinho
+  - name: Endereços
+  - name: Pedidos
+  - name: Administração
+paths:
+  /sanctum/csrf-cookie:
+    get:
+      tags: [Autenticação]
+      summary: Inicializa o cookie CSRF
+      responses:
+        '204':
+          description: Cookie XSRF-TOKEN definido pelo Laravel
+  /api/register:
+    post:
+      tags: [Autenticação]
+      summary: Cria uma conta e inicia a sessão
+      parameters:
+        - $ref: '#/components/parameters/GuestToken'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password, password_confirmation]
+              properties:
+                name: { type: string, maxLength: 50 }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+                password_confirmation: { type: string }
+      responses:
+        '201': { description: Conta criada; inclui usuário e resultado da fusão opcional do carrinho }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/login:
+    post:
+      tags: [Autenticação]
+      summary: Inicia sessão por cookie
+      parameters:
+        - $ref: '#/components/parameters/GuestToken'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200': { description: Login realizado; inclui usuário e carrinho fundido quando houver token válido }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/logout:
+    post:
+      tags: [Autenticação]
+      summary: Encerra a sessão
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/CsrfHeader' }]
+      responses:
+        '200': { description: Sessão encerrada }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/user:
+    get:
+      tags: [Perfil]
+      summary: Retorna o usuário autenticado
+      security: [{ sessionCookie: [] }]
+      responses:
+        '200':
+          description: Usuário autenticado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    put:
+      tags: [Perfil]
+      summary: Atualiza nome, e-mail e opcionalmente senha
+      description: Para alterar a senha, informe também current_password e password_confirmation.
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/CsrfHeader' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, maxLength: 50 }
+                email: { type: string, format: email }
+                current_password: { type: string }
+                password: { type: string, minLength: 8 }
+                password_confirmation: { type: string }
+      responses:
+        '200': { description: Perfil atualizado }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/products:
+    get:
+      tags: [Catálogo]
+      summary: Lista produtos ativos
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: category
+          description: Slug da categoria
+          schema: { type: string }
+        - in: query
+          name: sort
+          schema: { type: string, enum: [name, price_asc, price_desc, recent] }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Lista paginada de produtos }
+  /api/products/{id}:
+    get:
+      tags: [Catálogo]
+      summary: Detalha produto ativo
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { description: Produto encontrado }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/categories:
+    get:
+      tags: [Catálogo]
+      summary: Lista categorias
+      responses:
+        '200': { description: Categorias }
+    post:
+      tags: [Administração]
+      summary: Cria categoria
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/CsrfHeader' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, slug]
+              properties:
+                name: { type: string }
+                slug: { type: string }
+      responses:
+        '201': { description: Categoria criada }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/categories/{id}:
+    get:
+      tags: [Catálogo]
+      summary: Detalha categoria
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { description: Categoria }
+    put:
+      tags: [Administração]
+      summary: Atualiza categoria
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, properties: { name: { type: string }, slug: { type: string } } }
+      responses:
+        '200': { description: Categoria atualizada }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    delete:
+      tags: [Administração]
+      summary: Exclui categoria sem produtos associados
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      responses:
+        '204': { description: Categoria excluída }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/characteristics:
+    get:
+      tags: [Catálogo]
+      summary: Lista características de relógios
+      responses:
+        '200': { description: Características }
+    post:
+      tags: [Administração]
+      summary: Cria características
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/CsrfHeader' }]
+      responses:
+        '201': { description: Características criadas }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/cart:
+    get:
+      tags: [Carrinho]
+      summary: Obtém ou cria carrinho do visitante/usuário
+      parameters: [{ $ref: '#/components/parameters/GuestToken' }]
+      responses:
+        '200': { description: Carrinho; visitantes recebem X-Guest-Token na resposta }
+  /api/cart/items:
+    post:
+      tags: [Carrinho]
+      summary: Adiciona produto ao carrinho
+      parameters: [{ $ref: '#/components/parameters/GuestToken' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [product_id, quantity]
+              properties:
+                product_id: { type: integer }
+                quantity: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Carrinho atualizado }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/cart/items/{id}:
+    put:
+      tags: [Carrinho]
+      summary: Atualiza quantidade; zero remove o item
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/GuestToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [quantity]
+              properties: { quantity: { type: integer, minimum: 0 } }
+      responses:
+        '200': { description: Carrinho atualizado }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Carrinho]
+      summary: Remove item do carrinho
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/GuestToken'
+      responses:
+        '200': { description: Carrinho atualizado }
+  /api/cart/merge:
+    post:
+      tags: [Carrinho]
+      summary: Funde carrinho de visitante com o carrinho autenticado
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/GuestToken' }, { $ref: '#/components/parameters/CsrfHeader' }]
+      responses:
+        '200': { description: Carrinho fundido e ajustes de estoque }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/addresses:
+    get:
+      tags: [Endereços]
+      summary: Lista endereços do usuário autenticado
+      security: [{ sessionCookie: [] }]
+      responses:
+        '200': { description: Endereços do usuário }
+    post:
+      tags: [Endereços]
+      summary: Cadastra endereço
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/CsrfHeader' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AddressInput' }
+      responses:
+        '201': { description: Endereço criado }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/addresses/{id}:
+    put:
+      tags: [Endereços]
+      summary: Atualiza endereço próprio
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AddressInput' }
+      responses:
+        '200': { description: Endereço atualizado }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Endereços]
+      summary: Exclui endereço não utilizado em pedido
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      responses:
+        '204': { description: Endereço excluído }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/orders:
+    get:
+      tags: [Pedidos]
+      summary: Lista pedidos do usuário
+      security: [{ sessionCookie: [] }]
+      responses:
+        '200': { description: Pedidos paginados }
+    post:
+      tags: [Pedidos]
+      summary: Cria pedido a partir do carrinho autenticado
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/CsrfHeader' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [address_id]
+              properties: { address_id: { type: integer } }
+      responses:
+        '201': { description: Pedido criado; estoque reservado e carrinho esvaziado }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/orders/{id}:
+    get:
+      tags: [Pedidos]
+      summary: Detalha pedido próprio (ou qualquer pedido para admin)
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { description: Pedido }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/orders/{id}/pay:
+    post:
+      tags: [Pedidos]
+      summary: Registra pagamento simulado do próprio pedido
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      responses:
+        '200': { description: Pedido pago }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/orders/{id}/cancel:
+    post:
+      tags: [Pedidos]
+      summary: Cancela pedido pendente e restaura estoque
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      responses:
+        '200': { description: Pedido cancelado }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/admin/orders:
+    get:
+      tags: [Administração]
+      summary: Lista todos os pedidos com filtro opcional de status
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [pending_payment, paid, shipped, delivered, cancelled] }
+      responses:
+        '200': { description: Pedidos paginados }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/admin/orders/{id}/status:
+    patch:
+      tags: [Administração]
+      summary: Avança status do pedido respeitando as transições permitidas
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties: { status: { type: string, enum: [shipped, delivered, cancelled] } }
+      responses:
+        '200': { description: Status atualizado }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/admin/products/{id}/stock:
+    patch:
+      tags: [Administração]
+      summary: Atualiza estoque de produto
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [stock]
+              properties: { stock: { type: integer, minimum: 0, maximum: 1000000 } }
+      responses:
+        '200': { description: Estoque atualizado }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: velmora-session
+      description: Cookie de sessão Laravel. No navegador, o cookie é enviado automaticamente.
+  parameters:
+    Id:
+      in: path
+      name: id
+      required: true
+      schema: { type: integer, minimum: 1 }
+    GuestToken:
+      in: header
+      name: X-Guest-Token
+      required: false
+      schema: { type: string, format: uuid }
+      description: Token retornado no header X-Guest-Token ao iniciar um carrinho visitante.
+    CsrfHeader:
+      in: header
+      name: X-XSRF-TOKEN
+      required: true
+      schema: { type: string }
+      description: Valor decodificado do cookie XSRF-TOKEN obtido em /sanctum/csrf-cookie.
+  schemas:
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string, format: email }
+        role: { type: string, enum: [customer, admin] }
+    AddressInput:
+      type: object
+      required: [recipient_name, street, number, neighborhood, city, state, cep]
+      properties:
+        recipient_name: { type: string, maxLength: 100 }
+        street: { type: string, maxLength: 150 }
+        number: { type: string, maxLength: 20 }
+        complement: { type: [string, 'null'], maxLength: 100 }
+        neighborhood: { type: string, maxLength: 100 }
+        city: { type: string, maxLength: 100 }
+        state: { type: string, minLength: 2, maxLength: 2 }
+        cep: { type: string, pattern: '^\\d{5}-?\\d{3}$' }
+  responses:
+    Unauthorized:
+      description: Autenticação necessária
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: Usuário sem permissão
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Conflict:
+      description: Transição de estado inválida
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    BadRequest:
+      description: Origem da requisição inválida
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    ValidationError:
+      description: Dados inválidos
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message: { type: string }
+              errors: { type: object, additionalProperties: { type: array, items: { type: string } } }
+    Error:
+      type: object
+      properties:
+        message: { type: string }
