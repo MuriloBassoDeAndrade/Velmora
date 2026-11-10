@@ -189,6 +189,7 @@ async function renderOrder(id) {
 }
 function requireAuth() {
   if (currentUser) return true;
+  sessionStorage.setItem("velmora_after_login", currentPath());
   notify("Entre na sua conta para acessar esta página.", "error");
   renderAuthForm();
   accountDialog.showModal();
@@ -297,6 +298,10 @@ function addressFieldsMarkup() {
   return '<label>Destinatário<input name="recipient_name" required maxlength="100"></label><label>Rua<input name="street" required maxlength="150"></label><label>Número<input name="number" required maxlength="20"></label><label>Complemento<input name="complement" maxlength="100"></label><label>Bairro<input name="neighborhood" required maxlength="100"></label><label>Cidade<input name="city" required maxlength="100"></label><label>Estado (UF)<input name="state" required minlength="2" maxlength="2"></label><label>CEP<input name="cep" required placeholder="12345-678"></label>';
 }
 function renderAuthForm(mode = "login") {
+  if (currentUser) {
+    accountContent.innerHTML = '<div class="account-summary"><p>Conectado como</p><strong>' + esc(currentUser.name) + '</strong><span>' + esc(currentUser.email) + '</span><a class="text-link" href="/perfil" data-link>Gerenciar perfil →</a><button class="outline-btn" id="logoutButton" type="button">Sair da conta</button></div>';
+    return;
+  }
   const registering = mode === "register";
   accountContent.innerHTML = '<form id="authForm" class="form-grid">' +
     (registering ? '<label class="wide">Nome<input name="name" required maxlength="50" autocomplete="name"></label>' : '') +
