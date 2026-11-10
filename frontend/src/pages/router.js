@@ -5,7 +5,11 @@ export async function renderRoute(ctx) {
 
   document.querySelectorAll(".nav a[data-link]").forEach((link) => {
     const target = link.getAttribute("href");
-    const active = target === "/" ? entryPage === "home" || entryPage === "products" || entryPage === "product" || path.startsWith("/produto/") : target === "/pedidos" ? entryPage === "orders" || entryPage === "order" || path.startsWith("/pedido/") : target === "/perfil" ? entryPage === "profile" || path === "/perfil" : target === "/admin" ? entryPage === "admin" || path === "/admin" : false;
+    const params = new URLSearchParams(location.search);
+    const filter = link.dataset.navFilter;
+    const active = filter
+      ? params.get(filter) === link.dataset.navValue
+      : target === "/" ? (entryPage === "home" || entryPage === "products" || entryPage === "product" || path.startsWith("/produto/")) && !params.has("gender") && params.get("new") !== "1" : target === "/pedidos" ? entryPage === "orders" || entryPage === "order" || path.startsWith("/pedido/") : target === "/perfil" ? entryPage === "profile" || path === "/perfil" : target === "/admin" ? entryPage === "admin" || path === "/admin" : false;
     link.classList.toggle("is-active", active);
   });
 

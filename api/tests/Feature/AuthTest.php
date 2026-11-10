@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Cart;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Tests\Concerns\CreatesCatalog;
 use Tests\TestCase;
@@ -179,6 +180,7 @@ class AuthTest extends TestCase
     {
         $this->getJson('/api/user')->assertUnauthorized();
 
+        /** @var User $user */
         $user = User::factory()->create();
 
         $this->actingAs($user)->getJson('/api/user')
@@ -187,8 +189,47 @@ class AuthTest extends TestCase
             ->assertJsonMissingPath('password');
     }
 
+    public function test_user_can_update_profile_and_change_password(): void
+    {
+        /** @var User $user */
+        $user = User::factory()->create([
+            'name' => 'Nome antigo',
+            'email' => 'cliente@teste.com',
+            'password' => 'senha-antiga-123',
+        ]);
+
+        $this->actingAs($user)->putJson('/api/user', [
+            'name' => 'Nome atualizado',
+            'email' => 'cliente.novo@teste.com',
+            'current_password' => 'senha-antiga-123',
+            'password' => 'senha-nova-123',
+            'password_confirmation' => 'senha-nova-123',
+        ])->assertOk()
+            ->assertJsonPath('name', 'Nome atualizado')
+            ->assertJsonPath('email', 'cliente.novo@teste.com')
+            ->assertJsonMissingPath('password');
+
+        $this->assertTrue(Hash::check('senha-nova-123', $user->fresh()->password));
+    }
+
+    public function test_user_cannot_change_password_with_wrong_current_password(): void
+    {
+        /** @var User $user */
+        $user = User::factory()->create(['password' => 'senha-antiga-123']);
+
+        $this->actingAs($user)->putJson('/api/user', [
+            'current_password' => 'senha-incorreta',
+            'password' => 'senha-nova-123',
+            'password_confirmation' => 'senha-nova-123',
+        ])->assertStatus(422)
+            ->assertJsonValidationErrors(['current_password']);
+
+        $this->assertTrue(Hash::check('senha-antiga-123', $user->fresh()->password));
+    }
+
     public function test_logout_ends_the_session(): void
     {
+        /** @var User $user */
         $user = User::factory()->create();
 
         $this->actingAs($user, 'web')->fromFrontend()

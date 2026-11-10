@@ -9,5 +9,5 @@ export function renderAuthForm(ctx, mode = "login") {
     (registering ? '<label class="wide">Nome<input name="name" required maxlength="50" autocomplete="name"></label>' : '') +
     '<label class="wide">E-mail<input name="email" type="email" required autocomplete="email"></label><label class="wide">Senha<input name="password" type="password" minlength="8" required autocomplete="' + (registering ? "new-password" : "current-password") + '"></label>' +
     (registering ? '<label class="wide">Confirmar senha<input name="password_confirmation" type="password" minlength="8" required></label>' : '') +
-    '<button class="solid-btn wide" type="submit">' + (registering ? "Criar conta" : "Entrar") + '</button></form><button class="text-link auth-switch" data-auth-mode="' + (registering ? "login" : "register") + '">' + (registering ? "Já tenho uma conta" : "Ainda não tenho conta") + '</button>';
+    '<button class="solid-btn wide" type="submit">' + (registering ? "Criar conta" : "Entrar") + '</button></form><button class="text-link auth-switch" type="button" data-auth-mode="' + (registering ? "login" : "register") + '">' + (registering ? "Já tenho uma conta" : "Ainda não tenho conta") + '</button>';
 }

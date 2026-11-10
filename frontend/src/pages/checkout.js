@@ -5,14 +5,27 @@ export async function openCheckout(ctx) {
     const addresses = unwrap(await addressesApi.listAddresses()) || [];
     const dialog = createCheckoutDialog();
     const content = dialog.querySelector("#checkoutContent");
+    const savedAddressOptions = addresses.map((address, index) => {
+      const location = [
+        address.street + ", " + address.number,
+        address.neighborhood,
+        address.city + "/" + address.state,
+        "CEP " + address.cep,
+      ].filter(Boolean).map(esc).join(" · ");
+      return '<option value="' + address.id + '"' + (index === 0 ? " selected" : "") + '>' +
+        esc(address.recipient_name) + " — " + location + (index === 0 ? " (padrão)" : "") + '</option>';
+    }).join("");
     content.innerHTML = '<p class="muted">O frete fixo é de R$ 29,90. O total será calculado e confirmado pelo servidor.</p>' +
-      '<form id="checkoutForm" class="form-grid"><label class="wide">Endereço de entrega<select name="address_id" id="checkoutAddress"><option value="">Cadastrar novo endereço</option>' + addresses.map((a) => '<option value="' + a.id + '">' + esc(a.recipient_name) + ' — ' + esc(a.street) + ', ' + esc(a.number) + ' · ' + esc(a.city) + '/' + esc(a.state) + '</option>').join("") + '</select></label>' +
-      '<div id="checkoutNewAddress" class="form-grid wide" ' + (addresses.length ? "hidden" : "") + '>' + addressFieldsMarkup() + '</div><button class="solid-btn wide" type="submit">Criar pedido</button></form>';
+      '<form id="checkoutForm" class="form-grid"><label class="wide">Endereço de entrega<select name="address_id" id="checkoutAddress">' + savedAddressOptions + '<option value=""' + (addresses.length ? "" : " selected") + '>Cadastrar novo endereço</option></select></label>' +
+      '<div id="checkoutNewAddress" class="form-grid wide">' + addressFieldsMarkup() + '</div><button class="solid-btn wide" type="submit">Criar pedido</button></form>';
     const addressFields = content.querySelector("#checkoutNewAddress");
     const syncAddressFields = () => {
-      const useExisting = Boolean(content.querySelector("#checkoutAddress").value);
-      addressFields.hidden = useExisting;
-      addressFields.querySelectorAll("input").forEach((input) => input.disabled = useExisting);
+      const selectedAddressId = content.querySelector("#checkoutAddress").value;
+      const selectedAddress = addresses.find((address) => String(address.id) === selectedAddressId);
+      addressFields.querySelectorAll("input").forEach((input) => {
+        input.value = selectedAddress ? (selectedAddress[input.name] || "") : "";
+        input.disabled = Boolean(selectedAddress);
+      });
     };
     content.querySelector("#checkoutAddress").addEventListener("change", syncAddressFields);
     syncAddressFields();

@@ -81,7 +81,14 @@ function errorPage(error) {
   app.innerHTML = '<section class="empty-state"><p class="eyebrow">Não foi possível concluir</p><h1>Algo deu errado</h1><p>' + esc(error.message) + '</p><a class="solid-btn" href="/" data-link>Voltar à loja</a></section>';
 }
 function navigate(path) {
-  history.pushState({}, "", path);
+  const destination = new URL(path, location.href);
+  const currentLocation = location.pathname + location.search + location.hash;
+  const destinationLocation = destination.pathname + destination.search + destination.hash;
+  const isSameLocation = destinationLocation === currentLocation;
+  const isSameDefaultHome = destination.pathname === "/" && location.pathname === "/" &&
+    !destination.search && new URLSearchParams(location.search).toString() === "page=home";
+  if (isSameLocation || isSameDefaultHome) return;
+  history.pushState({}, "", destinationLocation);
   renderRoute();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -110,6 +117,12 @@ async function finishLogin(payload) {
   accountDialog.close();
   await loadCart();
   if (payload.adjustments?.length) notify("Algumas quantidades foram ajustadas ao estoque disponível.");
+  if (sessionStorage.getItem("velmora_continue_to_checkout") === "1") {
+    sessionStorage.removeItem("velmora_continue_to_checkout");
+    sessionStorage.removeItem("velmora_after_login");
+    await openCheckout();
+    return;
+  }
   const intended = sessionStorage.getItem("velmora_after_login");
   sessionStorage.removeItem("velmora_after_login");
   if (intended) navigate(intended);
@@ -131,19 +144,19 @@ const context = {
   productApi, cartApi, ordersApi, addressesApi, adminApi,
   productCard, productImage, cartItem, addressCard, addressForm,
   productAdminForm, categoryAdminForm, createCheckoutDialog, addressFieldsMarkup,
-  renderHome: (...args) => renderHome(context, ...args),
+  renderHome,
   renderProducts: (...args) => renderProductsPage(context, ...args),
   renderRegister: (...args) => renderRegisterPage(context, ...args),
   renderNotFound: () => renderNotFound(context),
-  renderProduct: (...args) => renderProduct(context, ...args),
-  renderOrders: (...args) => renderOrders(context, ...args),
-  renderOrder: (...args) => renderOrder(context, ...args),
-  renderProfile: (...args) => renderProfile(context, ...args),
-  renderAdmin: (...args) => renderAdmin(context, ...args),
-  renderAuthForm: (...args) => renderAuthForm(context, ...args),
-  openCart: (...args) => openCart(context, ...args),
-  openCheckout: (...args) => openCheckout(context, ...args),
-  renderRoute: (...args) => renderRoute(context, ...args),
+  renderProduct,
+  renderOrders,
+  renderOrder,
+  renderProfile,
+  renderAdmin,
+  renderAuthForm,
+  openCart,
+  openCheckout,
+  renderRoute,
 };
 function addressCard(address) { return renderAddressCard(context, address); }
 function addressForm(address) { return renderAddressForm(context, address); }
@@ -162,6 +175,24 @@ function openCart(...args) { return openCartPage(context, ...args); }
 function openCheckout(...args) { return openCheckoutPage(context, ...args); }
 function renderRoute(...args) { return renderRoutePage(context, ...args); }
 
+async function addProductToCart(form, button) {
+  button.disabled = true;
+  try {
+    const data = Object.fromEntries(new FormData(form).entries());
+    cart = unwrap(await cartApi.addCartItem({
+      product_id: Number(data.product_id),
+      quantity: Number(data.quantity),
+    }));
+    updateCartCount();
+    await openCart();
+    notify("Produto adicionado ao carrinho.");
+  } catch (error) {
+    notify(error.message, "error");
+  } finally {
+    button.disabled = false;
+  }
+}
+
 document.addEventListener("click", async (event) => {
   const link = event.target.closest("a[data-link]");
   if (link && link.origin === location.origin) {
@@ -173,10 +204,28 @@ document.addEventListener("click", async (event) => {
   }
   const close = event.target.closest("[data-close]");
   if (close) document.getElementById(close.dataset.close)?.close();
+  if (event.target.closest("#accountButton")) {
+    renderAuthForm();
+    accountDialog.showModal();
+    return;
+  }
+  if (event.target.closest("#cartButton")) {
+    await openCart();
+    return;
+  }
+  if (event.target.closest("#checkoutButton")) {
+    if (currentUser) {
+      await openCheckout();
+    } else {
+      sessionStorage.setItem("velmora_continue_to_checkout", "1");
+      requireAuth();
+    }
+    return;
+  }
   const authMode = event.target.closest("[data-auth-mode]");
   if (authMode) renderAuthForm(authMode.dataset.authMode);
   if (event.target.closest("[data-clear-filters]")) navigate("/");
-  const pageButton = event.target.closest("[data-page]");
+  const pageButton = event.target.closest("button[data-page]");
   if (pageButton) {
     const params = new URLSearchParams(location.search);
     params.set("page", pageButton.dataset.page);
@@ -184,12 +233,9 @@ document.addEventListener("click", async (event) => {
   }
   const addButton = event.target.closest("[data-add-product]");
   if (addButton) {
-    try {
-      const form = document.getElementById("addProductForm");
-      const data = Object.fromEntries(new FormData(form).entries());
-      cart = unwrap(await cartApi.addCartItem({ product_id: Number(data.product_id), quantity: Number(data.quantity) }));
-      updateCartCount(); notify("Produto adicionado ao carrinho.");
-    } catch (error) { notify(error.message, "error"); }
+    event.preventDefault();
+    await addProductToCart(addButton.form, addButton);
+    return;
   }
   const cartAction = event.target.closest("[data-cart-change]");
   if (cartAction) {
@@ -264,7 +310,7 @@ document.getElementById("accountContent").addEventListener("click", async (event
   }
 });
 document.getElementById("accountContent").addEventListener("submit", async (event) => {
-  if (event.target.id !== "authForm") return;
+  if (event.target.getAttribute("id") !== "authForm") return;
   event.preventDefault();
   const data = Object.fromEntries(new FormData(event.target).entries());
   try {
@@ -273,50 +319,61 @@ document.getElementById("accountContent").addEventListener("submit", async (even
     await finishLogin(payload);
   } catch (error) { notify(error.message, "error"); }
 });
-app.addEventListener("submit", async (event) => {
+document.addEventListener("submit", async (event) => {
   const form = event.target;
+  if (form.getAttribute("id") !== "checkoutForm") return;
   event.preventDefault();
   try {
-    if (form.id === "catalogFilters") {
+    const data = Object.fromEntries(new FormData(form).entries());
+    let addressId = data.address_id;
+    if (!addressId) {
+      const addressData = Object.fromEntries(new FormData(form).entries());
+      delete addressData.address_id;
+      const address = unwrap(await addressesApi.createAddress(addressData));
+      addressId = address.id;
+    }
+    const order = unwrap(await ordersApi.createOrder({ address_id: Number(addressId) }));
+    document.getElementById("checkoutDialog").close();
+    await loadCart();
+    notify("Pedido criado. Confirme o pagamento simulado.");
+    navigate("/pedido/" + order.id);
+  } catch (error) { notify(error.message, "error"); }
+});
+app.addEventListener("submit", async (event) => {
+  const form = event.target;
+  const formId = form.getAttribute("id");
+  event.preventDefault();
+  try {
+    if (formId === "catalogFilters") {
       const data = Object.fromEntries(new FormData(form).entries());
       const params = new URLSearchParams();
       Object.entries(data).forEach(([key, value]) => { if (value) params.set(key, value); });
       navigate("/" + (params.toString() ? "?" + params.toString() : ""));
-    } else if (form.id === "addProductForm") {
-      const data = Object.fromEntries(new FormData(form).entries());
-      cart = unwrap(await cartApi.addCartItem({ product_id: Number(data.product_id), quantity: Number(data.quantity) }));
-      updateCartCount(); notify("Produto adicionado ao carrinho.");
-    } else if (form.id === "checkoutForm") {
-      const data = Object.fromEntries(new FormData(form).entries());
-      let addressId = data.address_id;
-      if (!addressId) {
-        const addressData = Object.fromEntries(new FormData(form).entries());
-        delete addressData.address_id;
-        const address = unwrap(await addressesApi.createAddress(addressData));
-        addressId = address.id;
-      }
-      const order = unwrap(await ordersApi.createOrder({ address_id: Number(addressId) }));
-      document.getElementById("checkoutDialog").close();
-      await loadCart(); notify("Pedido criado. Confirme o pagamento simulado.");
-      navigate("/pedido/" + order.id);
-    } else if (form.id === "profileForm") {
+    } else if (formId === "addProductForm") {
+      await addProductToCart(form, form.querySelector("[data-add-product]"));
+    } else if (formId === "profileForm") {
       const data = Object.fromEntries(new FormData(form).entries());
       Object.keys(data).forEach((key) => { if (!data[key]) delete data[key]; });
       currentUser = await authApi.updateProfile(data);
       setSessionUI(); notify("Perfil atualizado."); renderProfile();
-    } else if (form.id === "addressForm") {
+    } else if (formId === "passwordForm") {
+      const data = Object.fromEntries(new FormData(form).entries());
+      await authApi.updateProfile(data);
+      form.reset();
+      notify("Senha atualizada com sucesso.");
+    } else if (formId === "addressForm") {
       const data = Object.fromEntries(new FormData(form).entries());
       const id = data.id; delete data.id;
       await (id ? addressesApi.updateAddress(id, data) : addressesApi.createAddress(data));
       notify("Endereço salvo."); renderProfile();
-    } else if (form.id === "adminProductForm") {
+    } else if (formId === "adminProductForm") {
       const formData = new FormData(form);
       const id = formData.get("id");
       formData.delete("id");
       if (id) formData.append("_method", "PUT");
       await (id ? adminApi.updateProduct(id, formData) : adminApi.createProduct(formData));
       notify("Produto salvo."); renderAdmin();
-    } else if (form.id === "adminCategoryForm") {
+    } else if (formId === "adminCategoryForm") {
       const data = Object.fromEntries(new FormData(form).entries());
       const id = data.id; delete data.id;
       await (id ? adminApi.updateCategory(id, data) : adminApi.createCategory(data));
@@ -325,7 +382,7 @@ app.addEventListener("submit", async (event) => {
       const data = Object.fromEntries(new FormData(form).entries());
       await adminApi.updateProductStock(form.dataset.stockForm, Number(data.stock));
       notify("Estoque atualizado.");
-    } else if (form.id === "adminOrderFilter") {
+    } else if (formId === "adminOrderFilter") {
       const status = new FormData(form).get("status");
       const payload = await adminApi.listAdminOrders(status ? { status } : {});
       const rows = payload.data || [];
@@ -335,3 +392,10 @@ app.addEventListener("submit", async (event) => {
   } catch (error) { notify(error.message, "error"); }
 });
 window.addEventListener("popstate", renderRoute);
+
+async function initializeApp() {
+  await restoreSession();
+  await renderRoute();
+}
+
+initializeApp();

@@ -52,6 +52,17 @@ class CatalogTest extends TestCase
         $this->assertSame(['Alpha'], $this->names('/api/products?category=luxo'));
     }
 
+    public function test_filter_by_gender(): void
+    {
+        $masculino = $this->createCharacteristic(['gender' => 'Masculino']);
+        $feminino = $this->createCharacteristic(['gender' => 'Feminino']);
+        $this->createProduct(['name' => 'Relógio masculino', 'characteristics_id' => $masculino->id]);
+        $this->createProduct(['name' => 'Relógio feminino', 'characteristics_id' => $feminino->id]);
+
+        $this->assertSame(['Relógio masculino'], $this->names('/api/products?gender=Masculino'));
+        $this->assertSame(['Relógio feminino'], $this->names('/api/products?gender=Feminino'));
+    }
+
     public function test_sort_by_price_both_directions(): void
     {
         $this->createProduct(['name' => 'Caro', 'price' => 500]);

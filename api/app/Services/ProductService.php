@@ -32,6 +32,13 @@ class ProductService
                 $categoryQuery->where('slug', $filters['category']);
             });
         }
+
+        if (!empty($filters['gender'])) {
+            $query->whereHas('characteristics', function ($characteristicsQuery) use ($filters) {
+                $characteristicsQuery->where('gender', $filters['gender']);
+            });
+        }
+
         $sort = $filters['sort'] ?? 'name';
 
         switch ($sort) {

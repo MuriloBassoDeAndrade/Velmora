@@ -23,9 +23,9 @@ class ProductController extends Controller
         );
     }
 
-    public function show(int $id)
+    public function show(string $id)
     {
-        $product = $this->productService->getById($id);
+        $product = $this->productService->getById((int) $id);
         return new ProductResource($product);
     }
 
@@ -35,9 +35,9 @@ class ProductController extends Controller
         );
     }
 
-    public function showAdmin(int $id)
+    public function showAdmin(string $id)
     {
-        $product = $this->productService->getByIdAdmin($id);
+        $product = $this->productService->getByIdAdmin((int) $id);
 
         return new ProductResource($product);
     }
@@ -51,23 +51,23 @@ class ProductController extends Controller
             ->setStatusCode(201);
     }
     
-    public function update(UpdateProductRequest $request, int $id)
+    public function update(UpdateProductRequest $request, string $id)
     {
         $data = $request->validated();
-        $product = $this->productService->update($id, $data);
+        $product = $this->productService->update((int) $id, $data);
         return new ProductResource($product);
     }
 
-    public function destroy(int $id)
+    public function destroy(string $id)
     {
-        $this->productService->delete($id);
+        $this->productService->delete((int) $id);
         return response()->noContent();
     }
 
-    public function updateStock(UpdateProductStockRequest $request, int $id)
+    public function updateStock(UpdateProductStockRequest $request, string $id)
     {
         $product = $this->productService->updateStock(
-            $id,
+            (int) $id,
             $request->validated('stock'),
             $request->user()->id
         );
