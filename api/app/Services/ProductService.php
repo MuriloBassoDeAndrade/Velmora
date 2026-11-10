@@ -52,12 +52,13 @@ class ProductService
             ->withQueryString();
     }
 
-    public function getAllAdmin(): Collection
+    public function getAllAdmin(): LengthAwarePaginator
     {
         return Product::query()
         ->with(['category', 'characteristics'])
         ->orderBy('name')
-        ->get();
+        ->paginate(12)
+        ->withQueryString();
     }
 
     public function getById(int $id): Product
