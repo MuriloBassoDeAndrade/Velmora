@@ -1,4 +1,4 @@
-export async function renderAdmin() { {
+export async function renderAdmin(ctx, ) {
   const { requireAuth, currentUser, app, loading, adminApi, productApi, unwrap, esc, money, statusLabel, errorPage } = ctx;
   if (!requireAuth()) return;
   if (currentUser.role !== "admin") { app.innerHTML = '<section class="empty-state"><h1>Acesso restrito</h1><p>Somente administradores podem acessar o painel.</p><a class="solid-btn" href="/" data-link>Voltar à loja</a></section>'; return; }
