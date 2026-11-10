@@ -20,3 +20,19 @@ export async function openCheckout(ctx) {
     dialog.showModal();
   } catch (error) { notify(error.message, "error"); }
 }
+
+export function createCheckoutDialog() {
+  let dialog = document.getElementById("checkoutDialog");
+  if (!dialog) {
+    dialog = document.createElement("dialog");
+    dialog.id = "checkoutDialog";
+    dialog.className = "modal";
+    dialog.innerHTML = '<div class="modal-head"><h2>Finalizar pedido</h2><button class="icon-btn" data-close="checkoutDialog">×</button></div><div class="modal-body" id="checkoutContent"></div>';
+    document.body.append(dialog);
+  }
+  return dialog;
+}
+
+export function addressFieldsMarkup() {
+  return '<label>Destinatário<input name="recipient_name" required maxlength="100"></label><label>Rua<input name="street" required maxlength="150"></label><label>Número<input name="number" required maxlength="20"></label><label>Complemento<input name="complement" maxlength="100"></label><label>Bairro<input name="neighborhood" required maxlength="100"></label><label>Cidade<input name="city" required maxlength="100"></label><label>Estado (UF)<input name="state" required minlength="2" maxlength="2"></label><label>CEP<input name="cep" required placeholder="12345-678"></label>';
+}
