@@ -1,15 +1,15 @@
 <?php
 
-use Illuminate\\Http\\Request;
-use Illuminate\\Support\\Facades\\Route;
-use App\\Http\\Controllers\\Api\\CategoryController;
-use App\\Http\\Controllers\\Api\\AuthController;
-use App\\Http\\Controllers\\Api\\ProductController;
-use App\\Http\\Controllers\\Api\\CharacteristicController;
-use App\\Http\\Controllers\\Api\\CartController;
-use App\\Http\\Controllers\\Api\\AddressController;
-use App\\Http\\Controllers\\Api\\OrderController;
-use App\\Http\\Controllers\\Api\\Admin\\OrderController as AdminOrderController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\CharacteristicController;
+use App\Http\Controllers\Api\CartController;
+use App\Http\Controllers\Api\AddressController;
+use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 
 // Authentication routes
 Route::post('/register', [AuthController::class, 'register']);
