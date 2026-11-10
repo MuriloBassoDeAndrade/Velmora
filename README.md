@@ -72,6 +72,8 @@ Execute os testes:
 docker compose exec api php artisan test
 ```
 
+A suíte de CI validada no MySQL executou **166 testes e 573 asserções**, e o build do frontend também passou.
+
 Os testes usam o banco `velmora_test`, separado do banco de desenvolvimento `Velmora`.
 
 ## Autenticação e segurança
