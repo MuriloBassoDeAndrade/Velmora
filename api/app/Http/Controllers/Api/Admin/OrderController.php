@@ -30,7 +30,7 @@ class OrderController extends Controller
     public function updateStatus(UpdateOrderStatusRequest $request, int $id): OrderResource
     {
         return new OrderResource(
-            $this->orderService->updateStatus($id, $request->validated('status'))
+            $this->orderService->updateStatus($id, $request->validated('status'), $request->user()->id)
         );
     }
 }
