@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -101,9 +102,9 @@ class ProductService
      * Define o estoque de um produto (inclusive inativo). Usa lock para não
      * competir com um pedido sendo criado ao mesmo tempo.
      */
-    public function updateStock(int $id, int $stock): Product
+    public function updateStock(int $id, int $stock, ?int $adminId = null): Product
     {
-        return DB::transaction(function () use ($id, $stock) {
+        $product = DB::transaction(function () use ($id, $stock) {
             $product = Product::query()
                 ->whereKey($id)
                 ->lockForUpdate()
@@ -113,5 +114,13 @@ class ProductService
 
             return $product->load(['category', 'characteristics']);
         }, 3);
+
+        Log::info('Admin updated product stock.', [
+            'admin_id' => $adminId,
+            'product_id' => $product->id,
+            'stock' => $product->stock,
+        ]);
+
+        return $product;
     }
 }
