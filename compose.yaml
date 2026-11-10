@@ -34,7 +34,7 @@ services:
       DB_PASSWORD: Velmora
       APP_URL: http://localhost
       SESSION_DRIVER: database
-      SESSION_DOMAIN: ""
+      SESSION_DOMAIN: null
       SESSION_SAME_SITE: lax
       SESSION_SECURE_COOKIE: "false"
       SANCTUM_STATEFUL_DOMAINS: localhost
