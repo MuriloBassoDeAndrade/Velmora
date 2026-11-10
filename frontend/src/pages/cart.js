@@ -1,6 +1,7 @@
 export async function openCart(ctx, ) {
-  const { loadCart, cart, cartContent, cartItem, money, cartDialog, updateCartCount } = ctx;
+  const { loadCart, cartContent, cartItem, money, cartDialog, updateCartCount } = ctx;
   await loadCart();
+  const cart = ctx.cart;
   const items = cart?.items || [];
   cartContent.innerHTML = items.length
     ? items.map(cartItem).join("")
