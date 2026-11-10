@@ -345,7 +345,7 @@ document.addEventListener("click", async (event) => {
   if (event.target.closest("[data-new-address]")) document.getElementById("addressEditor").innerHTML = addressForm();
   const editAddress = event.target.closest("[data-edit-address]");
   if (editAddress) {
-    try { const list = unwrap(await api("/api/addresses")); const address = list.find((a) => a.id === Number(editAddress.dataset.editAddress)); document.getElementById("addressEditor").innerHTML = addressForm(address); }
+    try { const list = unwrap(await addressesApi.listAddresses()); const address = list.find((a) => a.id === Number(editAddress.dataset.editAddress)); document.getElementById("addressEditor").innerHTML = addressForm(address); }
     catch (error) { notify(error.message, "error"); }
   }
   const deleteAddress = event.target.closest("[data-delete-address]");
