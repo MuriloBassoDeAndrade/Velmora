@@ -113,6 +113,7 @@ async function finishLogin(payload) {
   const intended = sessionStorage.getItem("velmora_after_login");
   sessionStorage.removeItem("velmora_after_login");
   if (intended) navigate(intended);
+  else if (currentPath().startsWith("/pages/")) navigate("/");
   else notify("Bem-vindo à Velmora!");
 }
 
