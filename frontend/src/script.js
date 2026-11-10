@@ -1,4 +1,4 @@
-import { api, clearGuestToken } from "./api/http.js";
+import { clearGuestToken } from "./api/http.js";
 import { money, escapeHtml as esc } from "./utils/format.js";
 import { productCard, productImage } from "./components/productCard.js";
 import { updateHeaderSession } from "./components/header.js";
@@ -180,7 +180,7 @@ async function renderAdmin() {
   loading("Carregando painel administrativo...");
   try {
     const [productsPayload, categoriesPayload, charsPayload, ordersPayload] = await Promise.all([
-      adminApi.listAdminProducts(), api("/api/categories"), adminApi.listCharacteristics(), adminApi.listAdminOrders(),
+      adminApi.listAdminProducts(), productApi.listCategories(), adminApi.listCharacteristics(), adminApi.listAdminOrders(),
     ]);
     const products = productsPayload.data || [];
     categories = unwrap(categoriesPayload) || [];
@@ -229,7 +229,7 @@ function createCheckoutDialog() {
 async function openCheckout() {
   if (!requireAuth()) return;
   try {
-    const addresses = unwrap(await api("/api/addresses")) || [];
+    const addresses = unwrap(await addressesApi.listAddresses()) || [];
     const dialog = createCheckoutDialog();
     const content = dialog.querySelector("#checkoutContent");
     content.innerHTML = '<p class="muted">O frete fixo é de R$ 29,90. O total será calculado e confirmado pelo servidor.</p>' +
@@ -411,7 +411,7 @@ app.addEventListener("submit", async (event) => {
       navigate("/" + (params.toString() ? "?" + params.toString() : ""));
     } else if (form.id === "addProductForm") {
       const data = Object.fromEntries(new FormData(form).entries());
-      cart = unwrap(await api("/api/cart/items", { method: "POST", body: JSON.stringify({ product_id: Number(data.product_id), quantity: Number(data.quantity) }) }));
+      cart = unwrap(await cartApi.addCartItem({ product_id: Number(data.product_id), quantity: Number(data.quantity) }));
       updateCartCount(); notify("Produto adicionado ao carrinho.");
     } else if (form.id === "checkoutForm") {
       const data = Object.fromEntries(new FormData(form).entries());
