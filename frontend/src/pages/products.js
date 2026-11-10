@@ -1,2 +1,1 @@
-// Entrada específica da página; a aplicação compartilhada inicializa a tela correta.
-import "../script.js";
+export { renderHome as renderProducts } from "./home.js";
