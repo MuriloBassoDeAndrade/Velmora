@@ -59,12 +59,16 @@ http.interceptors.response.use(
 
 // Compatibilidade com o formato usado pelo controlador atual do frontend.
 export async function api(path, options = {}) {
+  const headers = { ...(options.headers || {}) };
+  if (options.body && !(options.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
   const response = await http.request({
     url: path,
     method: options.method || "GET",
     data: options.body,
     params: options.params,
-    headers: options.headers,
+    headers,
   });
   return response.data;
 }
