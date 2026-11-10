@@ -1,5 +1,5 @@
 export async function renderRoute(ctx) {
-  const { currentPath, app, renderAuthForm, accountDialog, renderHome, renderProduct, openCart, openCheckout, renderOrders, renderOrder, renderProfile, renderAdmin, errorPage } = ctx;
+  const { currentPath, app, renderAuthForm, renderRegister, renderProducts, renderNotFound, accountDialog, renderHome, renderProduct, openCart, openCheckout, renderOrders, renderOrder, renderProfile, renderAdmin, errorPage } = ctx;
   const path = currentPath();
   const entryPage = document.body.dataset.page || null;
 
@@ -10,11 +10,13 @@ export async function renderRoute(ctx) {
   });
 
   if (entryPage === "login" || entryPage === "register") {
-    renderAuthForm(entryPage === "register" ? "register" : "login");
+    if (entryPage === "register") renderRegister();
+    else renderAuthForm("login");
     if (!accountDialog.open) accountDialog.showModal();
     return;
   }
-  if (entryPage === "home" || entryPage === "products") return renderHome(new URLSearchParams(location.search));
+  if (entryPage === "home") return renderHome(new URLSearchParams(location.search));
+  if (entryPage === "products") return renderProducts(new URLSearchParams(location.search));
   if (entryPage === "product") {
     const id = new URLSearchParams(location.search).get("id");
     return id ? renderProduct(id) : errorPage(new Error("Informe o ID do produto na URL."));
@@ -28,10 +30,7 @@ export async function renderRoute(ctx) {
   }
   if (entryPage === "profile") return renderProfile();
   if (entryPage === "admin") return renderAdmin();
-  if (entryPage === "404") {
-    app.innerHTML = '<section class="empty-state"><p class="eyebrow">404</p><h1>Página não encontrada</h1><p>O endereço acessado não existe.</p><a class="solid-btn" href="/" data-link>Voltar à loja</a></section>';
-    return;
-  }
+  if (entryPage === "404") return renderNotFound();
 
   if (path === "/") return renderHome(new URLSearchParams(location.search));
   if (path.startsWith("/produto/")) return renderProduct(path.split("/")[2]);
@@ -39,5 +38,5 @@ export async function renderRoute(ctx) {
   if (path.startsWith("/pedido/")) return renderOrder(path.split("/")[2]);
   if (path === "/perfil") return renderProfile();
   if (path === "/admin") return renderAdmin();
-  app.innerHTML = '<section class="empty-state"><p class="eyebrow">404</p><h1>Página não encontrada</h1><p>O endereço acessado não existe.</p><a class="solid-btn" href="/" data-link>Voltar à loja</a></section>';
+  return renderNotFound();
 }
