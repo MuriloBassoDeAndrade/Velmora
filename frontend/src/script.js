@@ -1,9 +1,25 @@
 import { api, clearGuestToken } from "./api/http.js";
+import { money, escapeHtml as esc } from "./utils/format.js";
+import { productCard, productImage } from "./components/productCard.js";
+import { updateHeaderSession } from "./components/header.js";
+
+const app = document.getElementById("app");
+const cartDialog = document.getElementById("cartDialog");
+const accountDialog = document.getElementById("accountDialog");
+const cartContent = document.getElementById("cartContent");
+const accountContent = document.getElementById("accountContent");
+const toastNode = document.getElementById("toast");
+
+let currentUser = null;
+let cart = null;
+let categories = [];
+let characteristics = [];
+let toastTimer;
+
+const unwrap = (payload) => payload?.data ?? payload;
 
 function setSessionUI() {
-  document.getElementById("accountButton").textContent = currentUser ? currentUser.name : "Entrar";
-  document.querySelectorAll("[data-auth-link]").forEach((node) => node.hidden = !currentUser);
-  document.querySelectorAll("[data-admin-link]").forEach((node) => node.hidden = !currentUser || currentUser.role !== "admin");
+  updateHeaderSession(currentUser);
   updateCartCount();
 }
 function updateCartCount() {
@@ -39,21 +55,6 @@ function navigate(path) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 function currentPath() { return window.location.pathname.replace(/\/+$/, "") || "/"; }
-function productImage(product, className = "") {
-  return product.image_url
-    ? '<img class="' + className + '" src="' + esc(product.image_url) + '" alt="' + esc(product.name) + '" loading="lazy">'
-    : '<div class="watch-placeholder ' + className + '" role="img" aria-label="Imagem ilustrativa de ' + esc(product.name) + '"><span>V</span></div>';
-}
-function productCard(product) {
-  const unavailable = Number(product.stock) < 1;
-  return '<article class="product-card">' +
-    '<a class="product-visual" href="/produto/' + product.id + '" data-link>' + productImage(product) +
-    (unavailable ? '<span class="stock-pill">Esgotado</span>' : '') + '</a>' +
-    '<div class="product-info"><p class="eyebrow">' + esc(product.brand || product.category?.name || "Velmora") + '</p>' +
-    '<h3><a href="/produto/' + product.id + '" data-link>' + esc(product.name) + '</a></h3>' +
-    '<p class="product-category">' + esc(product.category?.name || "Relógio") + '</p>' +
-    '<div class="product-buy"><strong>' + money(product.price) + '</strong><a class="text-link" href="/produto/' + product.id + '" data-link>Ver produto →</a></div></div></article>';
-}
 async function fetchCategories() {
   const payload = await api("/api/categories");
   categories = unwrap(payload) || [];
