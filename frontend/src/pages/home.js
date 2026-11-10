@@ -1,4 +1,4 @@
-export async function renderHome(params = new URLSearchParams(location.search)) { {
+export async function renderHome(ctx, params = new URLSearchParams(location.search)) {
   const { app, loading, fetchCategories, productApi, categories, esc, productCard, errorPage } = ctx;
   loading("Preparando a seleção de relógios...");
   try {
