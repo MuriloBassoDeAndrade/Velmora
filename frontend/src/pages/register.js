@@ -1,2 +1,5 @@
-// Entrada específica da página; a aplicação compartilhada inicializa a tela correta.
-import "../script.js";
+import { renderAuthForm } from "./login.js";
+
+export function renderRegister(ctx) {
+  return renderAuthForm(ctx, "register");
+}
