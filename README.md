@@ -56,7 +56,7 @@ Velmora/
    - Swagger UI: [http://localhost/docs/](http://localhost/docs/)
    - OpenAPI: [http://localhost/openapi.yaml](http://localhost/openapi.yaml)
 
-O volume `api_public_storage` mantém imagens enviadas mesmo quando os containers são recriados. O volume `mysql_data` mantém os dados do banco.
+O endpoint administrativo de produtos aceita upload de imagens JPG/JPEG/PNG/WEBP de até 5 MB ou uma URL externa. Os arquivos enviados são armazenados no disco público do Laravel e servidos por `/storage/`. O volume `api_public_storage` mantém imagens enviadas mesmo quando os containers são recriados. O volume `mysql_data` mantém os dados do banco.
 
 ### Banco de testes
 
