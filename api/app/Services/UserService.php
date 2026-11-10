@@ -1,9 +1,9 @@
 <?php
 
-namespace App\\Services;
+namespace App\Services;
 
-use App\\Models\\User;
-use Illuminate\\Support\\Arr;
+use App\Models\User;
+use Illuminate\Support\Arr;
 
 class UserService
 {
