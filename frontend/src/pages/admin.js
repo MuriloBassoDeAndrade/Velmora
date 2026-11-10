@@ -1,4 +1,4 @@
-export async function renderAdmin(ctx, ) {
+export async function renderAdmin(ctx) {
   const { requireAuth, currentUser, app, loading, adminApi, productApi, unwrap, esc, money, statusLabel, errorPage } = ctx;
   let { categories, characteristics } = ctx;
   if (!requireAuth()) return;
