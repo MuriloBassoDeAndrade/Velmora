@@ -372,7 +372,7 @@ document.addEventListener("click", async (event) => {
 });
 document.getElementById("accountContent").addEventListener("click", async (event) => {
   if (event.target.closest("#logoutButton")) {
-    try { await api("/api/logout", { method: "POST" }); currentUser = null; localStorage.removeItem(GUEST_TOKEN_KEY); setSessionUI(); accountDialog.close(); await loadCart(); notify("Sessão encerrada."); if (currentPath() !== "/") navigate("/"); }
+    try { await api("/api/logout", { method: "POST" }); currentUser = null; clearGuestToken(); setSessionUI(); accountDialog.close(); await loadCart(); notify("Sessão encerrada."); if (currentPath() !== "/") navigate("/"); }
     catch (error) { notify(error.message, "error"); }
   }
 });
