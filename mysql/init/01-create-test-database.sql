@@ -1,0 +1,3 @@
+CREATE DATABASE IF NOT EXISTS velmora_test;
+GRANT ALL PRIVILEGES ON velmora_test.* TO 'Velmora'@'%';
+FLUSH PRIVILEGES;
