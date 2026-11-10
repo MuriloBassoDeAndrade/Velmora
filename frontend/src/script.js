@@ -1,66 +1,5 @@
-const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
-const GUEST_TOKEN_KEY = "velmora_guest_token";
-const app = document.getElementById("app");
-const cartDialog = document.getElementById("cartDialog");
-const accountDialog = document.getElementById("accountDialog");
-const cartContent = document.getElementById("cartContent");
-const accountContent = document.getElementById("accountContent");
-const toastNode = document.getElementById("toast");
+import { api, clearGuestToken } from "./api/http.js";
 
-let currentUser = null;
-let cart = null;
-let categories = [];
-let characteristics = [];
-let toastTimer;
-
-const money = (value) => Number(value ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
-  "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-})[char]);
-const unwrap = (payload) => payload?.data ?? payload;
-const guestToken = () => localStorage.getItem(GUEST_TOKEN_KEY);
-
-function notify(message, type = "success") {
-  toastNode.textContent = message;
-  toastNode.className = "toast is-visible " + type;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toastNode.classList.remove("is-visible"), 3400);
-}
-function readCookie(name) {
-  const prefix = name + "=";
-  const item = document.cookie.split("; ").find((part) => part.startsWith(prefix));
-  return item ? decodeURIComponent(item.slice(prefix.length)) : null;
-}
-async function csrf() {
-  const response = await fetch(API_BASE + "/sanctum/csrf-cookie", { credentials: "include" });
-  if (!response.ok) throw new Error("Não foi possível iniciar a proteção da sessão.");
-}
-function rememberGuestToken(response) {
-  const token = response.headers.get("X-Guest-Token");
-  if (token) localStorage.setItem(GUEST_TOKEN_KEY, token);
-}
-async function api(path, options = {}) {
-  const headers = new Headers(options.headers || {});
-  headers.set("Accept", "application/json");
-  const isForm = options.body instanceof FormData;
-  if (options.body && !isForm) headers.set("Content-Type", "application/json");
-  const method = (options.method || "GET").toUpperCase();
-  if (!["GET", "HEAD", "OPTIONS"].includes(method)) {
-    if (!readCookie("XSRF-TOKEN")) await csrf();
-    const xsrf = readCookie("XSRF-TOKEN");
-    if (xsrf) headers.set("X-XSRF-TOKEN", xsrf);
-  }
-  if (guestToken()) headers.set("X-Guest-Token", guestToken());
-  const response = await fetch(API_BASE + path, { ...options, method, headers, credentials: "include" });
-  rememberGuestToken(response);
-  const type = response.headers.get("content-type") || "";
-  const payload = type.includes("application/json") ? await response.json() : null;
-  if (!response.ok) {
-    const details = payload?.errors ? Object.values(payload.errors).flat().join(" ") : "";
-    throw new Error(details || payload?.message || "A solicitação falhou (HTTP " + response.status + ").");
-  }
-  return payload;
-}
 function setSessionUI() {
   document.getElementById("accountButton").textContent = currentUser ? currentUser.name : "Entrar";
   document.querySelectorAll("[data-auth-link]").forEach((node) => node.hidden = !currentUser);
@@ -311,7 +250,7 @@ function renderAuthForm(mode = "login") {
 }
 async function finishLogin(payload) {
   currentUser = payload.user;
-  localStorage.removeItem(GUEST_TOKEN_KEY);
+  clearGuestToken();
   cart = payload.cart || cart;
   setSessionUI();
   accountDialog.close();
