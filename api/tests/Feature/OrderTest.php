@@ -245,4 +245,28 @@ class OrderTest extends TestCase
 
         $this->assertSame(5, $product->fresh()?->stock ?? \App\Models\Product::withTrashed()->find($product->id)->stock);
     }
+    public function test_two_checkouts_cannot_sell_more_than_the_available_stock(): void
+    {
+        $product = $this->createProduct(['name' => 'Última unidade', 'stock' => 1]);
+        $firstUser = $this->createCustomer();
+        $secondUser = $this->createCustomer();
+        $firstAddress = $this->createAddress($firstUser);
+        $secondAddress = $this->createAddress($secondUser);
+        $this->addToCart($firstUser, $product, 1);
+        $this->addToCart($secondUser, $product, 1);
+
+        $this->actingAs($firstUser)
+            ->postJson('/api/orders', ['address_id' => $firstAddress->id])
+            ->assertCreated();
+
+        $this->actingAs($secondUser)
+            ->postJson('/api/orders', ['address_id' => $secondAddress->id])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['items']);
+
+        $this->assertSame(0, $product->fresh()->stock);
+        $this->assertDatabaseCount('orders', 1);
+        $this->assertDatabaseCount('order_items', 1);
+    }
+
 }
