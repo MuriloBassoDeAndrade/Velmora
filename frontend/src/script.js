@@ -451,11 +451,44 @@ app.addEventListener("submit", async (event) => {
 window.addEventListener("popstate", renderRoute);
 async function renderRoute() {
   const path = currentPath();
+  const entryPage = path.startsWith("/pages/") ? document.body.dataset.page : null;
+  const pagePath = entryPage ? ({
+    home: "/", products: "/", login: "/login", register: "/register",
+    product: "/produto", cart: "/cart", checkout: "/checkout",
+    orders: "/pedidos", order: "/pedido", profile: "/perfil",
+    admin: "/admin", "404": "/404",
+  })[entryPage] : path;
+
   document.querySelectorAll(".nav a[data-link]").forEach((link) => {
     const target = link.getAttribute("href");
-    const active = target === "/" ? path === "/" || path.startsWith("/produto/") : target === "/pedidos" ? path === "/pedidos" || path.startsWith("/pedido/") : target === "/perfil" ? path === "/perfil" : target === "/admin" ? path === "/admin" : false;
+    const active = target === "/" ? pagePath === "/" || pagePath === "/produto" || pagePath.startsWith("/produto/") : target === "/pedidos" ? pagePath === "/pedidos" || pagePath === "/pedido" || pagePath.startsWith("/pedido/") : target === "/perfil" ? pagePath === "/perfil" : target === "/admin" ? pagePath === "/admin" : false;
     link.classList.toggle("is-active", active);
   });
+
+  if (entryPage === "login" || entryPage === "register") {
+    renderAuthForm(entryPage === "register" ? "register" : "login");
+    accountDialog.showModal();
+    return;
+  }
+  if (entryPage === "products" || entryPage === "home") return renderHome(new URLSearchParams(location.search));
+  if (entryPage === "product") {
+    const id = new URLSearchParams(location.search).get("id");
+    return id ? renderProduct(id) : errorPage(new Error("Informe o ID do produto na URL."));
+  }
+  if (entryPage === "cart") return openCart();
+  if (entryPage === "checkout") return openCheckout();
+  if (entryPage === "orders") return renderOrders();
+  if (entryPage === "order") {
+    const id = new URLSearchParams(location.search).get("id");
+    return id ? renderOrder(id) : errorPage(new Error("Informe o ID do pedido na URL."));
+  }
+  if (entryPage === "profile") return renderProfile();
+  if (entryPage === "admin") return renderAdmin();
+  if (entryPage === "404") {
+    app.innerHTML = '<section class="empty-state"><p class="eyebrow">404</p><h1>Página não encontrada</h1><p>O endereço acessado não existe.</p><a class="solid-btn" href="/" data-link>Voltar à loja</a></section>';
+    return;
+  }
+
   if (path === "/") return renderHome(new URLSearchParams(location.search));
   if (path.startsWith("/produto/")) return renderProduct(path.split("/")[2]);
   if (path === "/pedidos") return renderOrders();
