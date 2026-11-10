@@ -11,12 +11,11 @@ WORKDIR /app
 
 COPY . .
 
-# validate the lock file and include development dependencies
 RUN composer validate --no-check-publish \
     && composer install --no-interaction --prefer-dist \
     && composer check-platform-reqs
 
 EXPOSE 8000
 
-# the project bind mount is available only when the container starts
-CMD ["php", "artisan", "serve", "--host=0.0.0.0"]
+# Apenas para desenvolvimento local; produção usa FrankenPHP no Dockerfile principal.
+CMD ["sh", "-c", "php artisan storage:link --force && exec php artisan serve --host=0.0.0.0 --port=8000"]
