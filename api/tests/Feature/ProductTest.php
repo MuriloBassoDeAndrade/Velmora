@@ -236,4 +236,23 @@ class ProductTest extends TestCase
 
         $this->deleteJson('/api/products/9999')->assertNotFound();
     }
+    public function test_admin_can_upload_product_image_to_public_storage(): void
+    {
+        Storage::fake('public');
+        $this->actingAsAdmin();
+
+        $response = $this->post('/api/products', $this->productPayload([
+            'image_url' => null,
+            'image' => UploadedFile::fake()->image('velmora-watch.jpg'),
+        ]));
+
+        $response->assertCreated();
+        $imageUrl = $response->json('data.image_url');
+        $path = parse_url($imageUrl, PHP_URL_PATH);
+        $storagePath = substr($path, strlen('/storage/'));
+
+        Storage::disk('public')->assertExists($storagePath);
+        $this->assertDatabaseHas('products', ['image_url' => $imageUrl]);
+    }
+
 }
