@@ -199,3 +199,33 @@ footer img { width: 220px; }
   .cart-line { align-items: flex-start; flex-direction: column; }
   .cart-controls { width: 100%; }
 }
+
+
+/* ===== Conta e checkout ===== */
+.account-form { display: grid; gap: .9rem; padding: 1rem 0; }
+.account-form label { display: grid; gap: .3rem; color: var(--muted); font-size: .9rem; }
+.account-form input, .account-form select {
+  width: 100%;
+  padding: .7rem .8rem;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font: inherit;
+}
+.account-form input:focus, .account-form select:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+.account-form .add { justify-self: start; }
+.account-link {
+  border: 0;
+  padding: .5rem 0;
+  background: transparent;
+  color: var(--gold);
+  font: inherit;
+  cursor: pointer;
+}
+.account-greeting { color: var(--muted); }
+.checkout-button { margin-top: .75rem; }
+.checkout-shipping { color: var(--muted); font-size: .9rem; }
+.order-confirmation { padding: 1.5rem 0; }
+.order-confirmation h3 { font: 500 1.7rem var(--serif); color: var(--gold); }
+.order-confirmation strong { color: var(--gold); }
