@@ -1,0 +1,1449 @@
+openapi: 3.1.0
+info:
+  title: Velmora REST API
+  version: 1.0.0
+  description: |
+    API da loja Velmora. A autenticação do navegador usa sessão Laravel/Sanctum por cookie.
+    No Swagger UI, as requisições usam o mesmo host e preservam cookies. Antes de operações
+    de escrita, a interface obtém /sanctum/csrf-cookie e envia o valor decodificado do cookie
+    XSRF-TOKEN no header X-XSRF-TOKEN. Não há autenticação por token Bearer.
+servers:
+  - url: /
+    description: Mesmo host da interface; o proxy encaminha /api para a API
+tags:
+  - name: Autenticação
+    description: Login e registro públicos; sessão estabelecida por cookie Sanctum.
+  - name: Perfil
+    description: Exige sessão autenticada.
+  - name: Catálogo
+    description: Consultas públicas de produtos, categorias e características.
+  - name: Carrinho
+    description: Carrinho de visitante por X-Guest-Token ou carrinho da sessão autenticada.
+  - name: Endereços
+    description: Endereços pertencem ao usuário autenticado.
+  - name: Pedidos
+    description: Pedidos do usuário autenticado; administradores também podem consultar e cancelar conforme as regras da operação.
+  - name: Administração
+    description: Exige sessão autenticada e papel admin, verificado pelo middleware admin.
+paths:
+  /api/health:
+    get:
+      tags: [Autenticação]
+      summary: Verifica a disponibilidade da API
+      security: []
+      responses:
+        '200':
+          description: API disponível
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, const: ok }
+  /sanctum/csrf-cookie:
+    get:
+      tags: [Autenticação]
+      summary: Inicializa o cookie CSRF
+      responses:
+        '204':
+          description: Define os cookies de sessão/CSRF necessários para chamadas de escrita stateful.
+  /api/register:
+    post:
+      tags: [Autenticação]
+      summary: Cria uma conta e inicia a sessão
+      parameters:
+        - $ref: '#/components/parameters/GuestToken'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password, password_confirmation]
+              properties:
+                name: { type: string, maxLength: 50 }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+                password_confirmation: { type: string }
+      responses:
+        '201':
+          description: Conta criada; a resposta inclui usuário, carrinho fundido se houver token válido e ajustes.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/login:
+    post:
+      tags: [Autenticação]
+      summary: Inicia sessão por cookie
+      parameters:
+        - $ref: '#/components/parameters/GuestToken'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200':
+          description: Login realizado; a resposta inclui usuário, carrinho fundido se houver token válido e ajustes.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/logout:
+    post:
+      tags: [Autenticação]
+      summary: Encerra a sessão
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/CsrfHeader' }]
+      responses:
+        '200':
+          description: Sessão encerrada e cookies invalidados
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Message' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/user:
+    get:
+      tags: [Perfil]
+      summary: Retorna o usuário autenticado
+      security: [{ sessionCookie: [] }]
+      responses:
+        '200':
+          description: Usuário autenticado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    put:
+      tags: [Perfil]
+      summary: Atualiza nome, e-mail e opcionalmente senha
+      description: Para alterar a senha, informe também current_password e password_confirmation.
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/CsrfHeader' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, maxLength: 50 }
+                email: { type: string, format: email, maxLength: 255 }
+                current_password: { type: string }
+                password: { type: string, minLength: 8 }
+                password_confirmation: { type: string, minLength: 8 }
+      responses:
+        '200':
+          description: Perfil atualizado (model User diretamente, sem envelope data)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/admin/products:
+    get:
+      tags: [Administração]
+      summary: Lista produtos para administração
+      parameters:
+        - $ref: '#/components/parameters/Page'
+      security: [{ sessionCookie: [] }]
+      responses:
+        '200':
+          description: Produtos paginados (12 por página)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductCollection' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/admin/products/{id}:
+    get:
+      tags: [Administração]
+      summary: Detalha produto para administração
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: Produto em envelope data
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/products:
+    get:
+      tags: [Catálogo]
+      summary: Lista produtos ativos
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: category
+          description: Slug da categoria
+          schema: { type: string }
+        - in: query
+          name: sort
+          schema: { type: string, enum: [name, price_asc, price_desc, recent] }
+        - in: query
+          name: gender
+          description: Masculino e Feminino também incluem produtos Unissex.
+          schema: { type: string, enum: [Masculino, Feminino, Unissex] }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1 }
+      responses:
+        '200':
+          description: Produtos ativos paginados (12 por página)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductCollection' }
+    post:
+      tags: [Administração]
+      summary: Cria produto com upload opcional de imagem
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/CsrfHeader' }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductMultipartCreate'
+            encoding:
+              image:
+                contentType: image/jpeg, image/png, image/webp
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductCreate'
+      responses:
+        '201':
+          description: Produto criado em envelope data
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/products/{id}:
+    get:
+      tags: [Catálogo]
+      summary: Detalha produto ativo
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: Produto em envelope data
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Administração]
+      summary: Atualiza produto (JSON)
+      description: Para upload multipart, use POST com o campo _method=PUT, como faz o formulário do painel.
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductUpdate'
+      responses:
+        '200':
+          description: Produto atualizado em envelope data
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    patch:
+      tags: [Administração]
+      summary: Atualiza parcialmente produto (JSON)
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductUpdate'
+      responses:
+        '200':
+          description: Produto atualizado em envelope data
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    post:
+      tags: [Administração]
+      summary: Atualiza produto com upload de imagem
+      description: Envie como multipart/form-data com _method=PUT. Este é o formato usado pelo formulário do painel para que PHP processe os campos e o arquivo.
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductMultipartUpdate'
+            encoding:
+              image:
+                contentType: image/jpeg, image/png, image/webp
+      responses:
+        '200':
+          description: Produto atualizado; sem novo arquivo, mantém a imagem existente
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Administração]
+      summary: Exclui logicamente produto
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      responses:
+        '204': { description: 'Produto removido por exclusão lógica, sem corpo de resposta' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/categories:
+    get:
+      tags: [Catálogo]
+      summary: Lista categorias
+      responses:
+        '200':
+          description: Coleção de categorias em envelope data
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CategoryCollection' }
+    post:
+      tags: [Administração]
+      summary: Cria categoria
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/CsrfHeader' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, slug]
+              properties:
+                name: { type: string }
+                slug: { type: string }
+      responses:
+        '200':
+          description: Categoria criada em envelope data
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CategoryResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/categories/{id}:
+    get:
+      tags: [Catálogo]
+      summary: Detalha categoria
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: Categoria em envelope data
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CategoryResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Administração]
+      summary: Atualiza categoria
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CategoryInput' }
+      responses:
+        '200':
+          description: Categoria atualizada em envelope data
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CategoryResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    patch:
+      tags: [Administração]
+      summary: Atualiza categoria (alias PUT; todos os campos são obrigatórios)
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CategoryInput' }
+      responses:
+        '200':
+          description: Categoria atualizada em envelope data
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CategoryResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Administração]
+      summary: Exclui categoria sem produtos associados
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      responses:
+        '204': { description: Categoria excluída sem corpo de resposta }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/characteristics:
+    get:
+      tags: [Catálogo]
+      summary: Lista características de relógios
+      responses:
+        '200':
+          description: Coleção de características em envelope data
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CharacteristicCollection' }
+    post:
+      tags: [Administração]
+      summary: Cria características
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/CsrfHeader' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CharacteristicInput' }
+      responses:
+        '201':
+          description: Características criadas em envelope data
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CharacteristicResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/characteristics/{id}:
+    get:
+      tags: [Catálogo]
+      summary: Detalha características
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: Características em envelope data
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CharacteristicResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Administração]
+      summary: Atualiza características
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CharacteristicUpdate' }
+      responses:
+        '200':
+          description: Características atualizadas em envelope data
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CharacteristicResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    patch:
+      tags: [Administração]
+      summary: Atualiza parcialmente características
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CharacteristicUpdate' }
+      responses:
+        '200':
+          description: Características atualizadas em envelope data
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CharacteristicResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Administração]
+      summary: Exclui características sem produtos associados
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      responses:
+        '204': { description: Características excluídas sem corpo de resposta }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/cart:
+    get:
+      tags: [Carrinho]
+      summary: Obtém ou cria carrinho do visitante/usuário
+      parameters: [{ $ref: '#/components/parameters/GuestToken' }]
+      responses:
+        '200':
+          description: Carrinho em envelope data; visitantes recebem o token no header X-Guest-Token.
+          headers:
+            X-Guest-Token:
+              description: Token do carrinho visitante; não é retornado para sessões autenticadas.
+              schema: { type: string, format: uuid }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CartResponse' }
+  /api/cart/items:
+    post:
+      tags: [Carrinho]
+      summary: Adiciona produto ao carrinho
+      parameters:
+        - $ref: '#/components/parameters/GuestToken'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [product_id, quantity]
+              properties:
+                product_id: { type: integer }
+                quantity: { type: integer, minimum: 1 }
+      responses:
+        '200':
+          description: Carrinho atualizado em envelope data.
+          headers:
+            X-Guest-Token:
+              description: Presente para carrinho de visitante.
+              schema: { type: string, format: uuid }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CartResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/cart/items/{id}:
+    put:
+      tags: [Carrinho]
+      summary: Atualiza quantidade; zero remove o item
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/GuestToken'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [quantity]
+              properties: { quantity: { type: integer, minimum: 0 } }
+      responses:
+        '200':
+          description: Carrinho atualizado em envelope data; quantidade 0 remove o item.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CartResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Carrinho]
+      summary: Remove item do carrinho
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/GuestToken'
+        - $ref: '#/components/parameters/CsrfHeader'
+      responses:
+        '200':
+          description: Carrinho atualizado em envelope data.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CartResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/cart/merge:
+    post:
+      tags: [Carrinho]
+      summary: Funde carrinho de visitante com o carrinho autenticado
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/GuestTokenRequired'
+        - $ref: '#/components/parameters/CsrfHeader'
+      responses:
+        '200':
+          description: Carrinho fundido; ajustes de estoque são incluídos no nível superior da resposta.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CartMergeResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/addresses:
+    get:
+      tags: [Endereços]
+      summary: Lista endereços do usuário autenticado
+      security: [{ sessionCookie: [] }]
+      responses:
+        '200':
+          description: Coleção não paginada de endereços do usuário, envelopada em data.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AddressCollection' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Endereços]
+      summary: Cadastra endereço
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/CsrfHeader' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AddressInput' }
+      responses:
+        '201':
+          description: Endereço criado em envelope data
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AddressResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/addresses/{id}:
+    put:
+      tags: [Endereços]
+      summary: Atualiza endereço próprio
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AddressUpdate' }
+      responses:
+        '200':
+          description: Endereço atualizado em envelope data
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AddressResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    patch:
+      tags: [Endereços]
+      summary: Atualiza parcialmente endereço próprio
+      description: Os campos enviados são validados; omitidos permanecem inalterados.
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AddressUpdate' }
+      responses:
+        '200':
+          description: Endereço atualizado em envelope data
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AddressResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Endereços]
+      summary: Exclui endereço não utilizado em pedido
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      responses:
+        '204': { description: Endereço excluído sem corpo de resposta }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/orders:
+    get:
+      tags: [Pedidos]
+      summary: Lista pedidos do usuário
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+      responses:
+        '200':
+          description: Pedidos próprios, mais recentes primeiro, paginados (10 por página).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderCollection' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Pedidos]
+      summary: Cria pedido a partir do carrinho autenticado
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/CsrfHeader' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [address_id]
+              properties: { address_id: { type: integer } }
+      responses:
+        '201':
+          description: Pedido criado; estoque baixado e carrinho esvaziado na mesma transação.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/orders/{id}:
+    get:
+      tags: [Pedidos]
+      summary: Detalha pedido próprio ou pedido de qualquer usuário para admin
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: Pedido com itens, endereço e pagamento em envelope data.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/orders/{id}/pay:
+    post:
+      tags: [Pedidos]
+      summary: Registra pagamento simulado do próprio pedido
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      responses:
+        '200':
+          description: Pagamento simulado registrado para o dono do pedido.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/orders/{id}/cancel:
+    post:
+      tags: [Pedidos]
+      summary: Cancela pedido pendente e restaura estoque
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      responses:
+        '200':
+          description: Pedido pendente cancelado; estoque restaurado.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/admin/orders:
+    get:
+      tags: [Administração]
+      summary: Lista todos os pedidos com filtro opcional de status
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - in: query
+          name: status
+          description: Filtra por status exato; valor inválido retorna 422.
+          schema: { type: string, enum: [pending_payment, paid, shipped, delivered, cancelled] }
+      responses:
+        '200':
+          description: Todos os pedidos, mais recentes primeiro, paginados (10 por página), com cliente.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderCollection' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/admin/orders/{id}:
+    get:
+      tags: [Administração]
+      summary: Detalha pedido de qualquer usuário
+      security: [{ sessionCookie: [] }]
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: Pedido com itens, endereço, pagamento e cliente em envelope data.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/admin/orders/{id}/status:
+    patch:
+      tags: [Administração]
+      summary: Avança status do pedido respeitando as transições permitidas
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties: { status: { type: string, enum: [shipped, delivered, cancelled] } }
+      responses:
+        '200':
+          description: Status atualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /api/admin/products/{id}/stock:
+    patch:
+      tags: [Administração]
+      summary: Atualiza estoque de produto
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [stock]
+              properties: { stock: { type: integer, minimum: 0, maximum: 1000000 } }
+      responses:
+        '200':
+          description: Estoque atualizado; produto em envelope data.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: laravel-session
+      description: Cookie de sessão real do Laravel neste ambiente; o navegador o envia automaticamente no mesmo host.
+  parameters:
+    Id:
+      in: path
+      name: id
+      required: true
+      schema: { type: integer, minimum: 1 }
+    GuestToken:
+      in: header
+      name: X-Guest-Token
+      required: false
+      schema: { type: string, format: uuid }
+      description: Token retornado no header X-Guest-Token ao iniciar um carrinho visitante.
+    GuestTokenRequired:
+      in: header
+      name: X-Guest-Token
+      required: true
+      schema: { type: string, format: uuid }
+      description: Token do carrinho visitante a ser fundido à conta autenticada.
+    Page:
+      in: query
+      name: page
+      required: false
+      schema: { type: integer, minimum: 1, default: 1 }
+      description: Número da página. A paginação é fornecida pelo Laravel.
+    CsrfHeader:
+      in: header
+      name: X-XSRF-TOKEN
+      required: false
+      schema: { type: string }
+      description: Preenchido automaticamente pelo Swagger UI após obter /sanctum/csrf-cookie; valor decodificado do cookie XSRF-TOKEN.
+  schemas:
+    User:
+      type: object
+      required: [id, name, email, role]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string, format: email }
+        email_verified_at: { type: [string, 'null'], format: date-time }
+        role: { type: string, enum: [customer, admin] }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    Message:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string }
+    AuthResponse:
+      type: object
+      required: [user, cart, adjustments]
+      properties:
+        user: { $ref: '#/components/schemas/User' }
+        cart:
+          oneOf:
+            - $ref: '#/components/schemas/Cart'
+            - type: 'null'
+          description: Carrinho fundido se X-Guest-Token apontar para um carrinho válido; caso contrário null.
+        adjustments:
+          type: array
+          items: { $ref: '#/components/schemas/CartAdjustment' }
+    Category:
+      type: object
+      required: [id, name, slug, created_at, updated_at]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        slug: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    CategoryInput:
+      type: object
+      required: [name, slug]
+      properties:
+        name: { type: string, maxLength: 255 }
+        slug: { type: string, maxLength: 255 }
+    CategoryResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/Category' }
+    CategoryCollection:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Category' }
+    Characteristic:
+      allOf:
+        - $ref: '#/components/schemas/ProductCharacteristicsInput'
+        - type: object
+          required: [id, created_at, updated_at]
+          properties:
+            id: { type: integer }
+            created_at: { type: string, format: date-time }
+            updated_at: { type: string, format: date-time }
+    CharacteristicInput:
+      $ref: '#/components/schemas/ProductCharacteristicsInput'
+    CharacteristicUpdate:
+      type: object
+      description: Todos os campos são opcionais, mas os campos enviados não podem estar vazios.
+      properties:
+        gender: { type: string, enum: [Masculino, Feminino, Unissex] }
+        case_shape: { type: string, maxLength: 255 }
+        movement_type: { type: string, maxLength: 255 }
+        module_caliber_movement_number: { type: string, maxLength: 255 }
+        size_perception: { type: string, maxLength: 255 }
+        case_material: { type: string, maxLength: 255 }
+        main_watch_color: { type: string, maxLength: 255 }
+        strap_color: { type: string, maxLength: 255 }
+        dial_color: { type: string, maxLength: 255 }
+        strap_type: { type: string, maxLength: 255 }
+        dial_style: { type: string, maxLength: 255 }
+        crystal_type: { type: string, maxLength: 255 }
+        crown_and_caseback_type: { type: string }
+        functions: { type: string }
+        water_resistance: { type: string, maxLength: 255 }
+        warranty: { type: string, maxLength: 255 }
+        illumination_type: { type: string, maxLength: 255 }
+        watch_dimensions: { type: string, maxLength: 255 }
+        dial_dimensions: { type: string, maxLength: 255 }
+        thickness: { type: string, maxLength: 255 }
+        weight: { type: string, maxLength: 255 }
+        strap_lug_width: { type: string, maxLength: 255 }
+    CharacteristicResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/Characteristic' }
+    CharacteristicCollection:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Characteristic' }
+    ProductCharacteristicsInput:
+      type: object
+      description: Ao enviar characteristics, informe todos os campos listados.
+      required:
+        - gender
+        - case_shape
+        - movement_type
+        - module_caliber_movement_number
+        - size_perception
+        - case_material
+        - main_watch_color
+        - strap_color
+        - dial_color
+        - strap_type
+        - dial_style
+        - crystal_type
+        - crown_and_caseback_type
+        - functions
+        - water_resistance
+        - warranty
+        - illumination_type
+        - watch_dimensions
+        - dial_dimensions
+        - thickness
+        - weight
+        - strap_lug_width
+      properties:
+        gender: { type: string, enum: [Masculino, Feminino, Unissex] }
+        case_shape: { type: string, maxLength: 255 }
+        movement_type: { type: string, maxLength: 255 }
+        module_caliber_movement_number: { type: string, maxLength: 255 }
+        size_perception: { type: string, maxLength: 255 }
+        case_material: { type: string, maxLength: 255 }
+        main_watch_color: { type: string, maxLength: 255 }
+        strap_color: { type: string, maxLength: 255 }
+        dial_color: { type: string, maxLength: 255 }
+        strap_type: { type: string, maxLength: 255 }
+        dial_style: { type: string, maxLength: 255 }
+        crystal_type: { type: string, maxLength: 255 }
+        crown_and_caseback_type: { type: string }
+        functions: { type: string }
+        water_resistance: { type: string, maxLength: 255 }
+        warranty: { type: string, maxLength: 255 }
+        illumination_type: { type: string, maxLength: 255 }
+        watch_dimensions: { type: string, maxLength: 255 }
+        dial_dimensions: { type: string, maxLength: 255 }
+        thickness: { type: string, maxLength: 255 }
+        weight: { type: string, maxLength: 255 }
+        strap_lug_width: { type: string, maxLength: 255 }
+    ProductCreate:
+      type: object
+      description: Informe characteristics ou characteristics_id. image_url não é aceito; use o upload multipart para enviar imagem.
+      required: [name, brand, price, stock, category_id, active]
+      anyOf:
+        - required: [characteristics]
+        - required: [characteristics_id]
+      properties:
+        name: { type: string, maxLength: 255 }
+        description: { type: [string, 'null'] }
+        brand: { type: string, maxLength: 255 }
+        price: { type: number, minimum: 0 }
+        stock: { type: integer, minimum: 0 }
+        category_id: { type: integer, minimum: 1 }
+        active: { type: boolean }
+        characteristics_id: { type: integer, minimum: 1 }
+        characteristics: { $ref: '#/components/schemas/ProductCharacteristicsInput' }
+    ProductUpdate:
+      type: object
+      description: Todos os campos são opcionais. image_url não é aceito; characteristics, quando informado, deve conter todos os campos.
+      properties:
+        name: { type: string, maxLength: 255 }
+        description: { type: [string, 'null'] }
+        brand: { type: string, maxLength: 255 }
+        price: { type: number, minimum: 0 }
+        stock: { type: integer, minimum: 0 }
+        category_id: { type: integer, minimum: 1 }
+        active: { type: boolean }
+        characteristics_id: { type: integer, minimum: 1 }
+        characteristics: { $ref: '#/components/schemas/ProductCharacteristicsInput' }
+    ProductMultipartFields:
+      type: object
+      description: Campos do formulário multipart. Características são enviadas usando a notação de colchetes do PHP. Imagem opcional, JPG/JPEG/PNG/WEBP, até 5 MB.
+      properties:
+        name: { type: string, maxLength: 255 }
+        description: { type: string }
+        brand: { type: string, maxLength: 255 }
+        price: { type: number, minimum: 0 }
+        stock: { type: integer, minimum: 0 }
+        category_id: { type: integer, minimum: 1 }
+        active: { type: boolean }
+        characteristics_id: { type: integer, minimum: 1 }
+        image: { type: string, format: binary }
+        characteristics[gender]: { type: string, enum: [Masculino, Feminino, Unissex] }
+        characteristics[case_shape]: { type: string, maxLength: 255 }
+        characteristics[movement_type]: { type: string, maxLength: 255 }
+        characteristics[module_caliber_movement_number]: { type: string, maxLength: 255 }
+        characteristics[size_perception]: { type: string, maxLength: 255 }
+        characteristics[case_material]: { type: string, maxLength: 255 }
+        characteristics[main_watch_color]: { type: string, maxLength: 255 }
+        characteristics[strap_color]: { type: string, maxLength: 255 }
+        characteristics[dial_color]: { type: string, maxLength: 255 }
+        characteristics[strap_type]: { type: string, maxLength: 255 }
+        characteristics[dial_style]: { type: string, maxLength: 255 }
+        characteristics[crystal_type]: { type: string, maxLength: 255 }
+        characteristics[crown_and_caseback_type]: { type: string }
+        characteristics[functions]: { type: string }
+        characteristics[water_resistance]: { type: string, maxLength: 255 }
+        characteristics[warranty]: { type: string, maxLength: 255 }
+        characteristics[illumination_type]: { type: string, maxLength: 255 }
+        characteristics[watch_dimensions]: { type: string, maxLength: 255 }
+        characteristics[dial_dimensions]: { type: string, maxLength: 255 }
+        characteristics[thickness]: { type: string, maxLength: 255 }
+        characteristics[weight]: { type: string, maxLength: 255 }
+        characteristics[strap_lug_width]: { type: string, maxLength: 255 }
+    ProductMultipartCreate:
+      allOf:
+        - $ref: '#/components/schemas/ProductMultipartFields'
+        - type: object
+          required:
+            - name
+            - brand
+            - price
+            - stock
+            - category_id
+            - active
+          anyOf:
+            - required: [characteristics_id]
+            - required:
+                - characteristics[gender]
+                - characteristics[case_shape]
+                - characteristics[movement_type]
+                - characteristics[module_caliber_movement_number]
+                - characteristics[size_perception]
+                - characteristics[case_material]
+                - characteristics[main_watch_color]
+                - characteristics[strap_color]
+                - characteristics[dial_color]
+                - characteristics[strap_type]
+                - characteristics[dial_style]
+                - characteristics[crystal_type]
+                - characteristics[crown_and_caseback_type]
+                - characteristics[functions]
+                - characteristics[water_resistance]
+                - characteristics[warranty]
+                - characteristics[illumination_type]
+                - characteristics[watch_dimensions]
+                - characteristics[dial_dimensions]
+                - characteristics[thickness]
+                - characteristics[weight]
+                - characteristics[strap_lug_width]
+    ProductMultipartUpdate:
+      allOf:
+        - $ref: '#/components/schemas/ProductMultipartFields'
+        - type: object
+          description: Para atualização multipart, _method=PUT é obrigatório. Os demais campos podem ser omitidos; se qualquer characteristics[...] for enviado, envie todos.
+          required: [_method]
+          properties:
+            _method: { type: string, enum: [PUT] }
+    Product:
+      type: object
+      required: [id, category, characteristics, name, description, brand, price, stock, image_url, active, created_at, updated_at]
+      properties:
+        id: { type: integer }
+        category: { $ref: '#/components/schemas/Category' }
+        characteristics: { $ref: '#/components/schemas/Characteristic' }
+        name: { type: string }
+        description: { type: [string, 'null'] }
+        brand: { type: string }
+        price: { type: string, description: Decimal returned by Laravel }
+        stock: { type: integer }
+        image_url: { type: [string, 'null'], format: uri }
+        active: { type: boolean }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    ProductResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/Product' }
+    ProductCollection:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedCollection'
+        - type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: '#/components/schemas/Product' }
+    CartItem:
+      type: object
+      required: [id, product_id, quantity, subtotal, unavailable, exceeds_stock]
+      properties:
+        id: { type: integer }
+        product_id: { type: integer }
+        quantity: { type: integer }
+        subtotal: { type: string, description: Decimal amount formatted by the API }
+        product:
+          oneOf:
+            - $ref: '#/components/schemas/CartProduct'
+            - type: 'null'
+        unavailable: { type: boolean }
+        exceeds_stock: { type: boolean }
+    CartProduct:
+      type: object
+      required: [id, name, price, stock, active]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        price: { type: string }
+        stock: { type: integer }
+        active: { type: boolean }
+    Cart:
+      type: object
+      required: [id, user_id, items, total, has_unavailable_items, has_items_exceeding_stock, created_at, updated_at]
+      properties:
+        id: { type: integer }
+        user_id: { type: [integer, 'null'] }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/CartItem' }
+        total: { type: string }
+        has_unavailable_items: { type: boolean }
+        has_items_exceeding_stock: { type: boolean }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    CartResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/Cart' }
+    CartAdjustment:
+      type: object
+      required: [product_id, product_name, requested_quantity, final_quantity]
+      properties:
+        product_id: { type: integer }
+        product_name: { type: string }
+        requested_quantity: { type: integer }
+        final_quantity: { type: integer }
+    CartMergeResponse:
+      type: object
+      required: [data, adjustments]
+      properties:
+        data: { $ref: '#/components/schemas/Cart' }
+        adjustments:
+          type: array
+          items: { $ref: '#/components/schemas/CartAdjustment' }
+    Address:
+      allOf:
+        - $ref: '#/components/schemas/AddressInput'
+        - type: object
+          required: [id]
+          properties:
+            id: { type: integer }
+    AddressUpdate:
+      type: object
+      description: Todos os campos são opcionais; campos enviados são validados e atualizados.
+      properties:
+        recipient_name: { type: string, maxLength: 100 }
+        street: { type: string, maxLength: 150 }
+        number: { type: string, maxLength: 20 }
+        complement: { type: [string, 'null'], maxLength: 100 }
+        neighborhood: { type: string, maxLength: 100 }
+        city: { type: string, maxLength: 100 }
+        state: { type: string, minLength: 2, maxLength: 2, pattern: '^[A-Za-z]{2}$' }
+        cep: { type: string, pattern: '^\\d{5}-?\\d{3}$' }
+    AddressResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/Address' }
+    AddressCollection:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Address' }
+    OrderItem:
+      type: object
+      required: [id, product_id, product_name, unit_price, quantity, subtotal]
+      properties:
+        id: { type: integer }
+        product_id: { type: integer }
+        product_name: { type: string }
+        unit_price: { type: string }
+        quantity: { type: integer }
+        subtotal: { type: string }
+    Payment:
+      type: object
+      required: [amount, method, paid_at]
+      properties:
+        amount: { type: string }
+        method: { type: string, const: simulated }
+        paid_at: { type: string, format: date-time }
+    Order:
+      type: object
+      required: [id, status, subtotal, shipping, total, items, created_at, updated_at]
+      properties:
+        id: { type: integer }
+        status: { type: string, enum: [pending_payment, paid, shipped, delivered, cancelled] }
+        subtotal: { type: string }
+        shipping: { type: string, const: '29.90' }
+        total: { type: string }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/OrderItem' }
+        address: { $ref: '#/components/schemas/Address' }
+        payment:
+          oneOf:
+            - $ref: '#/components/schemas/Payment'
+            - type: 'null'
+        user:
+          type: object
+          properties:
+            id: { type: integer }
+            name: { type: string }
+            email: { type: string, format: email }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    OrderResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/Order' }
+    OrderCollection:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedCollection'
+        - type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: '#/components/schemas/Order' }
+    PaginatedCollection:
+      type: object
+      required: [data, links, meta]
+      properties:
+        data: { type: array, items: {} }
+        links:
+          type: object
+          properties:
+            first: { type: [string, 'null'] }
+            last: { type: [string, 'null'] }
+            prev: { type: [string, 'null'] }
+            next: { type: [string, 'null'] }
+        meta:
+          type: object
+          required: [current_page, from, last_page, links, path, per_page, to, total]
+          properties:
+            current_page: { type: integer }
+            from: { type: [integer, 'null'] }
+            last_page: { type: integer }
+            links:
+              type: array
+              items:
+                type: object
+                properties:
+                  url: { type: [string, 'null'] }
+                  label: { type: string }
+                  active: { type: boolean }
+            path: { type: string }
+            per_page: { type: integer }
+            to: { type: [integer, 'null'] }
+            total: { type: integer }
+    AddressInput:
+      type: object
+      required: [recipient_name, street, number, neighborhood, city, state, cep]
+      properties:
+        recipient_name: { type: string, maxLength: 100 }
+        street: { type: string, maxLength: 150 }
+        number: { type: string, maxLength: 20 }
+        complement: { type: [string, 'null'], maxLength: 100 }
+        neighborhood: { type: string, maxLength: 100 }
+        city: { type: string, maxLength: 100 }
+        state: { type: string, minLength: 2, maxLength: 2 }
+        cep: { type: string, pattern: '^\\d{5}-?\\d{3}$' }
+  responses:
+    Unauthorized:
+      description: Autenticação necessária
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: Usuário sem permissão
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Conflict:
+      description: Transição de estado inválida
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    BadRequest:
+      description: Origem da requisição inválida
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    ValidationError:
+      description: Dados inválidos
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message: { type: string }
+              errors: { type: object, additionalProperties: { type: array, items: { type: string } } }
+    Error:
+      type: object
+      properties:
+        message: { type: string }

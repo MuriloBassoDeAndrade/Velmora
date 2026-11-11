@@ -8,6 +8,7 @@ use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\User;
+use App\Support\Money;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -114,7 +115,7 @@ class OrderSeeder extends Seeder
                         break;
                     }
 
-                    $unitPriceCents = $this->moneyToCents(
+                    $unitPriceCents = Money::toCents(
                         (string) $product->price
                     );
 
@@ -138,9 +139,9 @@ class OrderSeeder extends Seeder
                     'user_id' => $user->id,
                     'address_id' => $address->id,
                     'status' => $data['status'],
-                    'subtotal' => $this->centsToMoney($subtotalCents),
-                    'shipping' => $this->centsToMoney(self::SHIPPING_CENTS),
-                    'total' => $this->centsToMoney($totalCents),
+                    'subtotal' => Money::format($subtotalCents),
+                    'shipping' => Money::format(self::SHIPPING_CENTS),
+                    'total' => Money::format($totalCents),
                 ]);
 
                 // Cria os itens e atualiza o estoque.
@@ -177,7 +178,7 @@ class OrderSeeder extends Seeder
 
                     Payment::create([
                         'order_id' => $order->id,
-                        'amount' => $this->centsToMoney($totalCents),
+                        'amount' => Money::format($totalCents),
                         'method' => 'simulated',
                         'paid_at' => now()->subHours($hoursAgo),
                     ]);
@@ -186,25 +187,4 @@ class OrderSeeder extends Seeder
         });
     }
 
-    private function moneyToCents(string $value): int
-    {
-        [$integer, $decimal] = array_pad(
-            explode('.', $value, 2),
-            2,
-            '0'
-        );
-
-        $decimal = str_pad(substr($decimal, 0, 2), 2, '0');
-
-        return ((int) $integer * 100) + (int) $decimal;
-    }
-
-    private function centsToMoney(int $cents): string
-    {
-        return sprintf(
-            '%d.%02d',
-            intdiv($cents, 100),
-            $cents % 100
-        );
-    }
 }

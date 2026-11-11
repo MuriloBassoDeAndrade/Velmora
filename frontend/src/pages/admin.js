@@ -1,3 +1,5 @@
+import { date } from "../utils/format.js";
+
 export async function renderAdmin(ctx) {
   const { requireAuth, currentUser, app, loading, adminApi, productApi, productImage, unwrap, esc, money, statusLabel, errorPage } = ctx;
   let { categories } = ctx;
@@ -39,7 +41,7 @@ export async function renderAdmin(ctx) {
       categories.map((c) => '<article><div><strong>' + esc(c.name) + '</strong><small>' + esc(c.slug) + '</small></div><div class="inline-actions"><button class="text-link" data-edit-category="' + c.id + '">Editar</button><button class="text-link danger-text" data-delete-category="' + c.id + '">Excluir</button></div></article>').join("") + '</div></section>' +
       '<section class="panel admin-section" id="admin-orders"><div class="panel-title-row"><div><p class="eyebrow">VENDAS</p><h2>Pedidos</h2></div><form id="adminOrderFilter"><select name="status"><option value="">Todos os status</option>' + ["pending_payment","paid","shipped","delivered","cancelled"].map((s) => '<option value="' + s + '"' + (orderStatus === s ? " selected" : "") + '>' + statusLabel(s) + '</option>').join("") + '</select><button class="outline-btn">Filtrar</button></form></div>' +
       '<div class="table-wrap"><table><thead><tr><th>Pedido</th><th>Cliente</th><th>Data</th><th>Total</th><th>Status</th><th>Ação</th></tr></thead><tbody>' +
-      orders.map((o) => '<tr><td>#' + o.id + '</td><td>' + esc(o.user?.name || o.user?.email || "Cliente") + '</td><td>' + new Date(o.created_at).toLocaleDateString("pt-BR") + '</td><td>' + money(o.total) + '</td><td>' + statusLabel(o.status) + '</td><td>' + (o.status === "paid" ? '<button class="text-link" data-order-status="' + o.id + '" data-next-status="shipped">Marcar enviado</button>' : o.status === "shipped" ? '<button class="text-link" data-order-status="' + o.id + '" data-next-status="delivered">Marcar entregue</button>' : '—') + '</td></tr>').join("") +
+      orders.map((o) => '<tr><td>#' + o.id + '</td><td>' + esc(o.user?.name || o.user?.email || "Cliente") + '</td><td>' + date(o.created_at) + '</td><td>' + money(o.total) + '</td><td>' + statusLabel(o.status) + '</td><td>' + (o.status === "paid" ? '<button class="text-link" data-order-status="' + o.id + '" data-next-status="shipped">Marcar enviado</button>' : o.status === "shipped" ? '<button class="text-link" data-order-status="' + o.id + '" data-next-status="delivered">Marcar entregue</button>' : '—') + '</td></tr>').join("") +
       '</tbody></table></div>' + adminPagination("orders", ordersPayload.meta) + '</section>';
     const initialSection = location.hash.startsWith("#admin-")
       ? document.getElementById(location.hash.slice(1))

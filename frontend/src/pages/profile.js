@@ -1,3 +1,6 @@
+import { statusPill } from "../components/statusPill.js";
+import { date } from "../utils/format.js";
+
 export async function renderProfile(ctx) {
   const { requireAuth, loading, addressesApi, ordersApi, unwrap, app, esc, currentUser, addressCard, money, statusLabel, errorPage } = ctx;
   if (!requireAuth()) return;
@@ -16,7 +19,7 @@ export async function renderProfile(ctx) {
       (addresses.length ? addresses.map(addressCard).join("") : '<p class="muted">Nenhum endereço cadastrado.</p>') + '</div><div id="addressEditor"></div></section>' +
       '<section class="panel profile-orders"><div class="panel-title-row"><h2>Meus pedidos</h2><a class="text-link" href="/pedidos" data-link>Ver todos</a></div>' +
       (orders.length ? '<div class="table-wrap"><table><thead><tr><th>Pedido</th><th>Data</th><th>Total</th><th>Status</th><th></th></tr></thead><tbody>' +
-        orders.map((order) => '<tr><td>#' + order.id + '</td><td>' + new Date(order.created_at).toLocaleDateString("pt-BR") + '</td><td>' + money(order.total) + '</td><td><span class="status-pill status-' + esc(order.status) + '">' + esc(statusLabel(order.status)) + '</span></td><td><a class="text-link" href="/pedido/' + order.id + '" data-link>Detalhes</a></td></tr>').join("") +
+        orders.map((order) => '<tr><td>#' + order.id + '</td><td>' + date(order.created_at) + '</td><td>' + money(order.total) + '</td><td>' + statusPill(order.status, statusLabel(order.status)) + '</td><td><a class="text-link" href="/pedido/' + order.id + '" data-link>Detalhes</a></td></tr>').join("") +
         '</tbody></table></div>' : '<p class="muted">Você ainda não fez pedidos. Suas compras aparecerão aqui.</p>') + '</section></div>';
   } catch (error) { errorPage(error); }
 }

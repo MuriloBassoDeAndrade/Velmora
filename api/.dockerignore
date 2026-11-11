@@ -8,6 +8,7 @@ storage/logs/*
 storage/framework/cache/data/*
 storage/framework/sessions/*
 storage/framework/views/*
+public/storage
 tests
 *.log
 .vscode

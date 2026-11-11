@@ -17,6 +17,7 @@ import { openCheckout as openCheckoutPage } from "./pages/checkout.js";
 import { renderRoute as renderRoutePage } from "./pages/router.js";
 import { clearGuestToken } from "./api/http.js";
 import { money, escapeHtml as esc } from "./utils/format.js";
+import { formDataToObject } from "./utils/forms.js";
 import { productCard, productImage } from "./components/productCard.js";
 import { cartItem } from "./components/cartItem.js";
 import { updateHeaderSession } from "./components/header.js";
@@ -175,7 +176,7 @@ function renderRoute(...args) { return renderRoutePage(context, ...args); }
 async function addProductToCart(form, button) {
   button.disabled = true;
   try {
-    const data = Object.fromEntries(new FormData(form).entries());
+    const data = formDataToObject(form);
     cart = unwrap(await cartApi.addCartItem({
       product_id: Number(data.product_id),
       quantity: Number(data.quantity),
@@ -238,6 +239,17 @@ document.addEventListener("click", async (event) => {
   const authMode = event.target.closest("[data-auth-mode]");
   if (authMode) renderAuthForm(authMode.dataset.authMode);
   if (event.target.closest("[data-clear-filters]")) navigate("/");
+  const ordersPageButton = event.target.closest("button[data-orders-page]");
+  if (ordersPageButton && !ordersPageButton.disabled) {
+    const page = Number(ordersPageButton.dataset.ordersPage);
+    if (!Number.isInteger(page) || page < 1) return;
+    const params = new URLSearchParams(location.search);
+    params.set("page", String(page));
+    history.pushState({}, "", location.pathname + "?" + params.toString());
+    await renderOrders();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
   const pageButton = event.target.closest("button[data-page]:not([data-admin-page])");
   if (pageButton) {
     const params = new URLSearchParams(location.search);
@@ -337,7 +349,7 @@ document.getElementById("accountContent").addEventListener("click", async (event
 document.getElementById("accountContent").addEventListener("submit", async (event) => {
   if (event.target.getAttribute("id") !== "authForm") return;
   event.preventDefault();
-  const data = Object.fromEntries(new FormData(event.target).entries());
+  const data = formDataToObject(event.target);
   try {
     const isRegister = Boolean(data.name);
     const payload = await (isRegister ? authApi.register(data) : authApi.login(data));
@@ -349,10 +361,10 @@ document.addEventListener("submit", async (event) => {
   if (form.getAttribute("id") !== "checkoutForm") return;
   event.preventDefault();
   try {
-    const data = Object.fromEntries(new FormData(form).entries());
+    const data = formDataToObject(form);
     let addressId = data.address_id;
     if (!addressId) {
-      const addressData = Object.fromEntries(new FormData(form).entries());
+      const addressData = { ...data };
       delete addressData.address_id;
       const address = unwrap(await addressesApi.createAddress(addressData));
       addressId = address.id;
@@ -370,24 +382,24 @@ app.addEventListener("submit", async (event) => {
   event.preventDefault();
   try {
     if (formId === "catalogFilters") {
-      const data = Object.fromEntries(new FormData(form).entries());
+      const data = formDataToObject(form);
       const params = new URLSearchParams();
       Object.entries(data).forEach(([key, value]) => { if (value) params.set(key, value); });
       navigate("/" + (params.toString() ? "?" + params.toString() : ""));
     } else if (formId === "addProductForm") {
       await addProductToCart(form, form.querySelector("[data-add-product]"));
     } else if (formId === "profileForm") {
-      const data = Object.fromEntries(new FormData(form).entries());
+      const data = formDataToObject(form);
       Object.keys(data).forEach((key) => { if (!data[key]) delete data[key]; });
       currentUser = await authApi.updateProfile(data);
       setSessionUI(); notify("Perfil atualizado."); renderProfile();
     } else if (formId === "passwordForm") {
-      const data = Object.fromEntries(new FormData(form).entries());
+      const data = formDataToObject(form);
       await authApi.updateProfile(data);
       form.reset();
       notify("Senha atualizada com sucesso.");
     } else if (formId === "addressForm") {
-      const data = Object.fromEntries(new FormData(form).entries());
+      const data = formDataToObject(form);
       const id = data.id; delete data.id;
       await (id ? addressesApi.updateAddress(id, data) : addressesApi.createAddress(data));
       notify("Endereço salvo."); renderProfile();
@@ -399,12 +411,12 @@ app.addEventListener("submit", async (event) => {
       await (id ? adminApi.updateProduct(id, formData) : adminApi.createProduct(formData));
       notify("Produto salvo."); renderAdmin();
     } else if (formId === "adminCategoryForm") {
-      const data = Object.fromEntries(new FormData(form).entries());
+      const data = formDataToObject(form);
       const id = data.id; delete data.id;
       await (id ? adminApi.updateCategory(id, data) : adminApi.createCategory(data));
       notify("Categoria salva."); renderAdmin();
     } else if (form.matches("[data-stock-form]")) {
-      const data = Object.fromEntries(new FormData(form).entries());
+      const data = formDataToObject(form);
       await adminApi.updateProductStock(form.dataset.stockForm, Number(data.stock));
       notify("Estoque atualizado.");
     } else if (formId === "adminOrderFilter") {

@@ -1,10 +1,16 @@
 export async function openCheckout(ctx) {
-  const { requireAuth, addressesApi, unwrap, createCheckoutDialog, esc, addressFieldsMarkup, cartDialog, notify } = ctx;
+  const { requireAuth, addressesApi, unwrap, createCheckoutDialog, esc, addressFieldsMarkup, cartDialog, notify, money } = ctx;
   if (!requireAuth()) return;
   try {
     const addresses = unwrap(await addressesApi.listAddresses()) || [];
     const dialog = createCheckoutDialog();
     const content = dialog.querySelector("#checkoutContent");
+    const cart = ctx.cart;
+    const items = cart?.items || [];
+    const shippingCents = items.length ? 2990 : 0;
+    const shipping = shippingCents / 100;
+    const estimatedTotal = money((Math.round(Number(cart?.total || 0) * 100) + shippingCents) / 100);
+    const cartIssues = items.some((item) => item.unavailable || item.exceeds_stock);
     const savedAddressOptions = addresses.map((address, index) => {
       const location = [
         address.street + ", " + address.number,
@@ -15,9 +21,23 @@ export async function openCheckout(ctx) {
       return '<option value="' + address.id + '"' + (index === 0 ? " selected" : "") + '>' +
         esc(address.recipient_name) + " — " + location + (index === 0 ? " (padrão)" : "") + '</option>';
     }).join("");
-    content.innerHTML = '<p class="muted">O frete fixo é de R$ 29,90. O total será calculado e confirmado pelo servidor.</p>' +
+    content.innerHTML = '<section class="panel checkout-summary"><h3>Resumo do pedido</h3>' +
+      (items.length ? items.map((item) => {
+        const product = item.product;
+        const issue = item.unavailable ? "Produto indisponível." :
+          item.exceeds_stock ? "Quantidade acima do estoque disponível." : "";
+        return '<div class="order-line"><div><strong>' + esc(product?.name || "Produto indisponível") + '</strong>' +
+          '<span>' + item.quantity + ' × ' + money(product?.price) + '</span>' +
+          (issue ? '<small class="danger-text">' + issue + '</small>' : '') + '</div><strong>' + money(item.subtotal) + '</strong></div>';
+      }).join("") : '<p class="muted">Seu carrinho está vazio.</p>') +
+      '<div class="summary-line"><span>Subtotal</span><strong>' + money(cart?.total || 0) + '</strong></div>' +
+      '<div class="summary-line"><span>Frete</span><strong>' + money(shipping) + '</strong></div>' +
+      '<div class="summary-line grand-total"><span>Total estimado</span><strong>' + estimatedTotal + '</strong></div>' +
+      '<p class="muted">A API recalcula e confirma o total ao criar o pedido.</p></section>' +
+      (!items.length ? '<p class="danger-text">Adicione produtos ao carrinho antes de finalizar.</p>' : '') +
+      (cartIssues ? '<p class="danger-text">Revise os itens indisponíveis ou acima do estoque no carrinho antes de finalizar.</p>' : '') +
       '<form id="checkoutForm" class="form-grid"><label class="wide">Endereço de entrega<select name="address_id" id="checkoutAddress">' + savedAddressOptions + '<option value=""' + (addresses.length ? "" : " selected") + '>Cadastrar novo endereço</option></select></label>' +
-      '<div id="checkoutNewAddress" class="form-grid wide">' + addressFieldsMarkup() + '</div><button class="solid-btn wide" type="submit">Criar pedido</button></form>';
+      '<div id="checkoutNewAddress" class="form-grid wide">' + addressFieldsMarkup() + '</div><button class="solid-btn wide" type="submit" ' + (!items.length || cartIssues ? "disabled" : "") + '>Criar pedido</button></form>';
     const addressFields = content.querySelector("#checkoutNewAddress");
     const syncAddressFields = () => {
       const selectedAddressId = content.querySelector("#checkoutAddress").value;

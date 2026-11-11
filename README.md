@@ -67,7 +67,7 @@ Requisitos: Docker Desktop com Docker Compose v2 e Git. Não é necessário inst
    docker compose exec api php artisan key:generate
    docker compose exec api php artisan migrate --seed
    ```
-5. Acesse a loja em [http://localhost](http://localhost), o painel Swagger em [http://localhost/docs/](http://localhost/docs/) e o arquivo OpenAPI em [http://localhost/openapi.yaml](http://localhost/openapi.yaml).
+5. Acesse a loja em [http://localhost](http://localhost), o painel Swagger em [http://localhost/api/docs](http://localhost/api/docs) e o arquivo OpenAPI em [http://localhost/api/docs/openapi.yaml](http://localhost/api/docs/openapi.yaml).
 
 Para percorrer o fluxo demonstrativo, entre como cliente, adicione produtos ao carrinho, informe ou cadastre um endereço no checkout e confirme o pagamento simulado. Depois, entre com a conta de administrador para consultar pedidos e avançar os status permitidos. O Swagger documenta as demais rotas.
 
@@ -117,6 +117,7 @@ Se frontend e API estiverem em domínios diferentes, configure CORS, cookies, HT
 
 ### Loja e catálogo
 - Catálogo público com busca por nome, filtro por categoria, ordenação por nome/preço/data e paginação.
+- Gênero limitado a Masculino, Feminino ou Unissex; relógios Unissex também aparecem nas coleções Masculino e Feminino.
 - Página própria para cada produto, com descrição, preço, categoria, características, imagem e disponibilidade.
 - Quantidade limitada ao estoque; produto inativo ou sem estoque não pode ser adicionado.
 - Mensagem explícita quando a busca não encontra resultados.
@@ -135,11 +136,12 @@ Se frontend e API estiverem em domínios diferentes, configure CORS, cookies, HT
 - Pedido criado como `pending_payment`, dentro de transação; estoque é bloqueado e decrementado e o carrinho é esvaziado.
 - Nome e preço unitário são congelados em cada item do pedido.
 - Pagamento explicitamente simulado, sem gateway e sem solicitar ou armazenar dados de cartão.
-- Histórico, detalhes e cancelamento de pedidos pendentes; cancelamento restaura o estoque.
+- Histórico paginado de pedidos, detalhes e cancelamento de pedidos pendentes; cancelamento restaura o estoque.
 
 ### Administração
 - Painel visual protegido por papel `admin`.
 - CRUD de produtos, upload de imagem JPG/JPEG/PNG/WEBP (até 5 MB), ativação/desativação e exclusão lógica.
+- Ao editar as características, o registro existente é atualizado se pertencer apenas ao produto; se outros produtos também o utilizarem, é criada uma cópia para preservar os dados deles.
 - CRUD de categorias. A API bloqueia a exclusão de categoria ainda utilizada por produtos; é necessário reatribuir ou remover esses produtos primeiro.
 - Atualização de estoque.
 - Listagem administrativa de pedidos, filtro por status e avanço `paid → shipped → delivered`.
@@ -160,7 +162,7 @@ Se frontend e API estiverem em domínios diferentes, configure CORS, cookies, HT
 
 ## Rotas e documentação
 
-A documentação interativa completa está em [Swagger UI](http://localhost/docs/) e a especificação está em [openapi.yaml](http://localhost/openapi.yaml). O Swagger documenta as rotas efetivamente usadas, incluindo autenticação, catálogo, carrinho, endereços, pedidos e administração.
+A documentação interativa completa está em [Swagger UI](http://localhost/api/docs) e a especificação está em [openapi.yaml](http://localhost/api/docs/openapi.yaml). O Swagger documenta as rotas efetivamente usadas, incluindo autenticação, catálogo, carrinho, endereços, pedidos e administração.
 
 No fluxo de sessão do navegador, o frontend primeiro solicita `/sanctum/csrf-cookie`, envia o token do cookie `XSRF-TOKEN` em `X-XSRF-TOKEN` para operações de escrita e mantém os cookies de sessão nas requisições. Para visitantes, o token do carrinho vem da API pelo header `X-Guest-Token`, fica no `localStorage` e acompanha as próximas chamadas do carrinho.
 
@@ -192,7 +194,7 @@ Esse comando apaga e recria as tabelas do banco configurado; não execute em pro
 - `api/Dockerfile.dev` é para desenvolvimento; `api/Dockerfile` usa FrankenPHP para produção.
 - `mysql_data` persiste o banco.
 - `api_public_storage` persiste imagens enviadas.
-- O proxy encaminha `/api`, `/sanctum`, `/docs`, `/openapi.yaml` e `/storage` para a API.
+- O proxy encaminha `/api`, incluindo `/api/docs` e seus assets, além de `/sanctum` e `/storage` para a API.
 
 ### Banco de testes e testes automatizados
 
@@ -208,7 +210,7 @@ Execute os testes Laravel (a configuração de testes usa o banco `velmora_test`
 docker compose exec api php artisan test
 ```
 
-Última execução verificada: **171 testes passaram, com 593 asserções**.
+Última execução verificada: **174 testes passaram, com 611 asserções**.
 
 O banco `velmora_test` é criado pelo script de inicialização do MySQL quando o volume é criado pela primeira vez. Se você já tinha um volume antes desse script, crie o banco uma vez usando o comando acima. Os testes limpam e recriam tabelas nesse banco; não configure o banco de produção para testes.
 
