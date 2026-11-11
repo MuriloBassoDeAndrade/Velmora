@@ -2,10 +2,7 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
-use Illuminate\Foundation\Http\FormRequest;
-
-class UpdateProductRequest extends FormRequest
+class UpdateProductRequest extends ProductRequest
 {
 
     public function authorize(): bool
@@ -15,17 +12,17 @@ class UpdateProductRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
+        return array_merge([
             'name' => ['sometimes', 'string', 'max:255'],
             'description' => ['sometimes', 'nullable', 'string'],
             'brand' => ['sometimes','string', 'max:255'],
             'price' => ['sometimes', 'numeric', 'min:0'],
             'stock' => ['sometimes', 'integer', 'min:0'],
-            'image_url' => ['sometimes', 'nullable', 'url'],
+            'image_url' => ['prohibited'],
             'image' => ['sometimes', 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'characteristics_id' => ['sometimes','integer', 'exists:characteristics,id'],
             'category_id' => ['sometimes','integer', 'exists:categories,id'],
             'active' => ['sometimes', 'boolean'],
-        ];
+        ], $this->characteristicRules('sometimes'));
     }
 }

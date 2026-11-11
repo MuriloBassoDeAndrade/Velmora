@@ -56,11 +56,19 @@ class CatalogTest extends TestCase
     {
         $masculino = $this->createCharacteristic(['gender' => 'Masculino']);
         $feminino = $this->createCharacteristic(['gender' => 'Feminino']);
+        $unissex = $this->createCharacteristic(['gender' => 'Unissex']);
         $this->createProduct(['name' => 'Relógio masculino', 'characteristics_id' => $masculino->id]);
         $this->createProduct(['name' => 'Relógio feminino', 'characteristics_id' => $feminino->id]);
+        $this->createProduct(['name' => 'Relógio unissex', 'characteristics_id' => $unissex->id]);
 
-        $this->assertSame(['Relógio masculino'], $this->names('/api/products?gender=Masculino'));
-        $this->assertSame(['Relógio feminino'], $this->names('/api/products?gender=Feminino'));
+        $this->assertEqualsCanonicalizing(
+            ['Relógio masculino', 'Relógio unissex'],
+            $this->names('/api/products?gender=Masculino')
+        );
+        $this->assertEqualsCanonicalizing(
+            ['Relógio feminino', 'Relógio unissex'],
+            $this->names('/api/products?gender=Feminino')
+        );
     }
 
     public function test_sort_by_price_both_directions(): void

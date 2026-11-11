@@ -44,6 +44,20 @@ class CharacteristicTest extends TestCase
         $this->assertDatabaseHas('characteristics', ['gender' => 'Feminino']);
     }
 
+    public function test_gender_must_be_one_of_the_supported_values(): void
+    {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/characteristics', $this->characteristicData(['gender' => 'Outro']))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['gender']);
+
+        $characteristic = $this->createCharacteristic();
+        $this->putJson("/api/characteristics/{$characteristic->id}", ['gender' => 'Outro'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['gender']);
+    }
+
     public function test_store_validates_required_fields(): void
     {
         $this->actingAsAdmin();

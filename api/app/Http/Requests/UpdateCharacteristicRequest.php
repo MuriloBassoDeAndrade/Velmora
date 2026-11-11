@@ -14,7 +14,7 @@ class UpdateCharacteristicRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'gender' => ['sometimes', 'required', 'string', 'max:255'],
+            'gender' => ['sometimes', 'required', 'string', 'in:Masculino,Feminino,Unissex'],
             'case_shape' => ['sometimes', 'required', 'string', 'max:255'],
             'movement_type' => ['sometimes', 'required', 'string', 'max:255'],
             'module_caliber_movement_number' => ['sometimes', 'required', 'string', 'max:255'],

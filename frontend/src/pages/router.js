@@ -1,7 +1,8 @@
 export async function renderRoute(ctx) {
   const { currentPath, app, renderAuthForm, renderRegister, renderProducts, renderNotFound, accountDialog, renderHome, renderProduct, openCart, openCheckout, renderOrders, renderOrder, renderProfile, renderAdmin, errorPage } = ctx;
   const path = currentPath();
-  const entryPage = path.startsWith("/pages/") ? document.body.dataset.page : null;
+  const isDocumentPage = path.startsWith("/pages/");
+  const entryPage = isDocumentPage ? document.body.dataset.page : null;
 
   document.querySelectorAll(".nav a[data-link]").forEach((link) => {
     const target = link.getAttribute("href");
@@ -9,8 +10,17 @@ export async function renderRoute(ctx) {
     const filter = link.dataset.navFilter;
     const active = filter
       ? params.get(filter) === link.dataset.navValue
-      : target === "/" ? (entryPage === "home" || entryPage === "products" || entryPage === "product" || path.startsWith("/produto/")) && !params.has("gender") && params.get("new") !== "1" : target === "/pedidos" ? entryPage === "orders" || entryPage === "order" || path.startsWith("/pedido/") : target === "/perfil" ? entryPage === "profile" || path === "/perfil" : target === "/admin" ? entryPage === "admin" || path === "/admin" : false;
+      : target === "/" ? (isDocumentPage
+        ? entryPage === "home" || entryPage === "products" || entryPage === "product"
+        : path === "/" || path.startsWith("/produto/")) && !params.has("gender") && params.get("new") !== "1"
+        : target === "/pedidos" ? (isDocumentPage
+          ? entryPage === "orders" || entryPage === "order"
+          : path === "/pedidos" || path.startsWith("/pedido/"))
+          : target === "/perfil" ? (isDocumentPage ? entryPage === "profile" : path === "/perfil")
+            : target === "/admin" ? (isDocumentPage ? entryPage === "admin" : path === "/admin") : false;
     link.classList.toggle("is-active", active);
+    if (active) link.setAttribute("aria-current", "page");
+    else link.removeAttribute("aria-current");
   });
 
   if (entryPage === "login" || entryPage === "register") {

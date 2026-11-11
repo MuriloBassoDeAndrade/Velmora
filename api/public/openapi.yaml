@@ -152,17 +152,26 @@ paths:
         '200': { description: Lista paginada de produtos }
     post:
       tags: [Administração]
-      summary: Cria produto
+      summary: Cria produto com upload opcional de imagem
       security: [{ sessionCookie: [] }]
       parameters: [{ $ref: '#/components/parameters/CsrfHeader' }]
       requestBody:
         required: true
         content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductMultipartCreate'
+            encoding:
+              image:
+                contentType: image/jpeg, image/png, image/webp
           application/json:
-            schema: { type: object, additionalProperties: true }
+            schema:
+              $ref: '#/components/schemas/ProductCreate'
       responses:
         '201': { description: Produto criado }
+        '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
   /api/products/{id}:
     get:
       tags: [Catálogo]
@@ -173,7 +182,8 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
     put:
       tags: [Administração]
-      summary: Atualiza produto
+      summary: Atualiza produto (JSON)
+      description: Para upload multipart, use POST com o campo _method=PUT, como faz o formulário do painel.
       security: [{ sessionCookie: [] }]
       parameters:
         - $ref: '#/components/parameters/Id'
@@ -182,13 +192,16 @@ paths:
         required: true
         content:
           application/json:
-            schema: { type: object, additionalProperties: true }
+            schema:
+              $ref: '#/components/schemas/ProductUpdate'
       responses:
         '200': { description: Produto atualizado }
+        '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
     patch:
       tags: [Administração]
-      summary: Atualiza parcialmente produto
+      summary: Atualiza parcialmente produto (JSON)
       security: [{ sessionCookie: [] }]
       parameters:
         - $ref: '#/components/parameters/Id'
@@ -197,10 +210,35 @@ paths:
         required: true
         content:
           application/json:
-            schema: { type: object, additionalProperties: true }
+            schema:
+              $ref: '#/components/schemas/ProductUpdate'
       responses:
         '200': { description: Produto atualizado }
+        '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    post:
+      tags: [Administração]
+      summary: Atualiza produto com upload de imagem
+      description: Envie como multipart/form-data com _method=PUT. Este é o formato usado pelo formulário do painel para que PHP processe os campos e o arquivo.
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductMultipartUpdate'
+            encoding:
+              image:
+                contentType: image/jpeg, image/png, image/webp
+      responses:
+        '200': { description: 'Produto atualizado; sem novo arquivo, mantém a imagem existente' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
     delete:
       tags: [Administração]
       summary: Exclui logicamente produto
@@ -575,6 +613,164 @@ components:
         name: { type: string }
         email: { type: string, format: email }
         role: { type: string, enum: [customer, admin] }
+    ProductCharacteristicsInput:
+      type: object
+      description: Ao enviar characteristics, informe todos os campos listados.
+      required:
+        - gender
+        - case_shape
+        - movement_type
+        - module_caliber_movement_number
+        - size_perception
+        - case_material
+        - main_watch_color
+        - strap_color
+        - dial_color
+        - strap_type
+        - dial_style
+        - crystal_type
+        - crown_and_caseback_type
+        - functions
+        - water_resistance
+        - warranty
+        - illumination_type
+        - watch_dimensions
+        - dial_dimensions
+        - thickness
+        - weight
+        - strap_lug_width
+      properties:
+        gender: { type: string, enum: [Masculino, Feminino, Unissex] }
+        case_shape: { type: string, maxLength: 255 }
+        movement_type: { type: string, maxLength: 255 }
+        module_caliber_movement_number: { type: string, maxLength: 255 }
+        size_perception: { type: string, maxLength: 255 }
+        case_material: { type: string, maxLength: 255 }
+        main_watch_color: { type: string, maxLength: 255 }
+        strap_color: { type: string, maxLength: 255 }
+        dial_color: { type: string, maxLength: 255 }
+        strap_type: { type: string, maxLength: 255 }
+        dial_style: { type: string, maxLength: 255 }
+        crystal_type: { type: string, maxLength: 255 }
+        crown_and_caseback_type: { type: string }
+        functions: { type: string }
+        water_resistance: { type: string, maxLength: 255 }
+        warranty: { type: string, maxLength: 255 }
+        illumination_type: { type: string, maxLength: 255 }
+        watch_dimensions: { type: string, maxLength: 255 }
+        dial_dimensions: { type: string, maxLength: 255 }
+        thickness: { type: string, maxLength: 255 }
+        weight: { type: string, maxLength: 255 }
+        strap_lug_width: { type: string, maxLength: 255 }
+    ProductCreate:
+      type: object
+      description: Informe characteristics ou characteristics_id. image_url não é aceito; use o upload multipart para enviar imagem.
+      required: [name, brand, price, stock, category_id, active]
+      anyOf:
+        - required: [characteristics]
+        - required: [characteristics_id]
+      properties:
+        name: { type: string, maxLength: 255 }
+        description: { type: [string, 'null'] }
+        brand: { type: string, maxLength: 255 }
+        price: { type: number, minimum: 0 }
+        stock: { type: integer, minimum: 0 }
+        category_id: { type: integer, minimum: 1 }
+        active: { type: boolean }
+        characteristics_id: { type: integer, minimum: 1 }
+        characteristics: { $ref: '#/components/schemas/ProductCharacteristicsInput' }
+    ProductUpdate:
+      type: object
+      description: Todos os campos são opcionais. image_url não é aceito; characteristics, quando informado, deve conter todos os campos.
+      properties:
+        name: { type: string, maxLength: 255 }
+        description: { type: [string, 'null'] }
+        brand: { type: string, maxLength: 255 }
+        price: { type: number, minimum: 0 }
+        stock: { type: integer, minimum: 0 }
+        category_id: { type: integer, minimum: 1 }
+        active: { type: boolean }
+        characteristics_id: { type: integer, minimum: 1 }
+        characteristics: { $ref: '#/components/schemas/ProductCharacteristicsInput' }
+    ProductMultipartFields:
+      type: object
+      description: Campos do formulário multipart. Características são enviadas usando a notação de colchetes do PHP. Imagem opcional, JPG/JPEG/PNG/WEBP, até 5 MB.
+      properties:
+        name: { type: string, maxLength: 255 }
+        description: { type: string }
+        brand: { type: string, maxLength: 255 }
+        price: { type: number, minimum: 0 }
+        stock: { type: integer, minimum: 0 }
+        category_id: { type: integer, minimum: 1 }
+        active: { type: boolean }
+        characteristics_id: { type: integer, minimum: 1 }
+        image: { type: string, format: binary }
+        characteristics[gender]: { type: string, enum: [Masculino, Feminino, Unissex] }
+        characteristics[case_shape]: { type: string, maxLength: 255 }
+        characteristics[movement_type]: { type: string, maxLength: 255 }
+        characteristics[module_caliber_movement_number]: { type: string, maxLength: 255 }
+        characteristics[size_perception]: { type: string, maxLength: 255 }
+        characteristics[case_material]: { type: string, maxLength: 255 }
+        characteristics[main_watch_color]: { type: string, maxLength: 255 }
+        characteristics[strap_color]: { type: string, maxLength: 255 }
+        characteristics[dial_color]: { type: string, maxLength: 255 }
+        characteristics[strap_type]: { type: string, maxLength: 255 }
+        characteristics[dial_style]: { type: string, maxLength: 255 }
+        characteristics[crystal_type]: { type: string, maxLength: 255 }
+        characteristics[crown_and_caseback_type]: { type: string }
+        characteristics[functions]: { type: string }
+        characteristics[water_resistance]: { type: string, maxLength: 255 }
+        characteristics[warranty]: { type: string, maxLength: 255 }
+        characteristics[illumination_type]: { type: string, maxLength: 255 }
+        characteristics[watch_dimensions]: { type: string, maxLength: 255 }
+        characteristics[dial_dimensions]: { type: string, maxLength: 255 }
+        characteristics[thickness]: { type: string, maxLength: 255 }
+        characteristics[weight]: { type: string, maxLength: 255 }
+        characteristics[strap_lug_width]: { type: string, maxLength: 255 }
+    ProductMultipartCreate:
+      allOf:
+        - $ref: '#/components/schemas/ProductMultipartFields'
+        - type: object
+          required:
+            - name
+            - brand
+            - price
+            - stock
+            - category_id
+            - active
+          anyOf:
+            - required: [characteristics_id]
+            - required:
+                - characteristics[gender]
+                - characteristics[case_shape]
+                - characteristics[movement_type]
+                - characteristics[module_caliber_movement_number]
+                - characteristics[size_perception]
+                - characteristics[case_material]
+                - characteristics[main_watch_color]
+                - characteristics[strap_color]
+                - characteristics[dial_color]
+                - characteristics[strap_type]
+                - characteristics[dial_style]
+                - characteristics[crystal_type]
+                - characteristics[crown_and_caseback_type]
+                - characteristics[functions]
+                - characteristics[water_resistance]
+                - characteristics[warranty]
+                - characteristics[illumination_type]
+                - characteristics[watch_dimensions]
+                - characteristics[dial_dimensions]
+                - characteristics[thickness]
+                - characteristics[weight]
+                - characteristics[strap_lug_width]
+    ProductMultipartUpdate:
+      allOf:
+        - $ref: '#/components/schemas/ProductMultipartFields'
+        - type: object
+          description: Para atualização multipart, _method=PUT é obrigatório. Os demais campos podem ser omitidos; se qualquer characteristics[...] for enviado, envie todos.
+          required: [_method]
+          properties:
+            _method: { type: string, enum: [PUT] }
     AddressInput:
       type: object
       required: [recipient_name, street, number, neighborhood, city, state, cep]

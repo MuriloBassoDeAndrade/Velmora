@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\UploadedFile;
 use RuntimeException;
+use App\Models\Characteristic;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -34,8 +35,12 @@ class ProductService
         }
 
         if (!empty($filters['gender'])) {
-            $query->whereHas('characteristics', function ($characteristicsQuery) use ($filters) {
-                $characteristicsQuery->where('gender', $filters['gender']);
+            $genders = in_array($filters['gender'], ['Masculino', 'Feminino'], true)
+                ? [$filters['gender'], 'Unissex']
+                : [$filters['gender']];
+
+            $query->whereHas('characteristics', function ($characteristicsQuery) use ($genders) {
+                $characteristicsQuery->whereIn('gender', $genders);
             });
         }
 
@@ -90,7 +95,9 @@ class ProductService
     public function create(array $data): Product
     {
         $image = $data['image'] ?? null;
+        $characteristics = $data['characteristics'] ?? null;
         unset($data['image']);
+        unset($data['characteristics']);
 
         if ($image instanceof UploadedFile) {
             $path = Storage::disk('public')->putFile('products', $image);
@@ -102,16 +109,22 @@ class ProductService
             $data['image_url'] = Storage::disk('public')->url($path);
         }
 
-        $product = Product::query()->create($data);
+        return DB::transaction(function () use ($data, $characteristics) {
+            if ($characteristics !== null) {
+                $data['characteristics_id'] = Characteristic::query()->create($characteristics)->id;
+            }
 
-        return $product->load(['category', 'characteristics']);
+            return Product::query()->create($data)->load(['category', 'characteristics']);
+        });
     }
 
     public function update(int $id, array $data): Product
     {
         $product = $this->getByIdAdmin($id);
         $image = $data['image'] ?? null;
+        $characteristics = $data['characteristics'] ?? null;
         unset($data['image']);
+        unset($data['characteristics']);
 
         $oldImagePath = null;
 
@@ -126,13 +139,33 @@ class ProductService
             $data['image_url'] = Storage::disk('public')->url($path);
         }
 
-        $product->update($data);
+        $product = DB::transaction(function () use ($product, $data, $characteristics) {
+            if ($characteristics !== null) {
+                $currentCharacteristic = Characteristic::query()
+                    ->lockForUpdate()
+                    ->findOrFail($product->characteristics_id);
+                $isShared = DB::table('products')
+                    ->where('characteristics_id', $currentCharacteristic->id)
+                    ->where('id', '!=', $product->id)
+                    ->exists();
+
+                if ($isShared) {
+                    $data['characteristics_id'] = Characteristic::query()->create($characteristics)->id;
+                } else {
+                    $currentCharacteristic->update($characteristics);
+                }
+            }
+
+            $product->update($data);
+
+            return $product->load(['category', 'characteristics']);
+        });
 
         if ($oldImagePath) {
             Storage::disk('public')->delete($oldImagePath);
         }
 
-        return $product->load(['category', 'characteristics']);
+        return $product;
     }
 
     private function publicStoragePath(?string $url): ?string

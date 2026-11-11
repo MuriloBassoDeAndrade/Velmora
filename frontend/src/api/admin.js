@@ -5,8 +5,7 @@ export const updateOrderStatus = (id, status) => api("/api/admin/orders/" + id +
 export const updateProductStock = (id, stock) => api("/api/admin/products/" + id + "/stock", { method: "PATCH", body: { stock } });
 export const getAdminProduct = (id) => api("/api/admin/products/" + id);
 
-export const listAdminProducts = () => api("/api/admin/products");
-export const listCharacteristics = () => api("/api/characteristics");
+export const listAdminProducts = (params = {}) => api("/api/admin/products", { params });
 export const createProduct = (data) => api("/api/products", { method: "POST", body: data });
 export const updateProduct = (id, data) => api("/api/products/" + id, { method: "POST", body: data });
 export const deleteProduct = (id) => api("/api/products/" + id, { method: "DELETE" });

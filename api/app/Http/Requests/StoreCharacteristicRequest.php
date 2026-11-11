@@ -14,7 +14,7 @@ class StoreCharacteristicRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'gender' => ['required', 'string', 'max:255'],
+            'gender' => ['required', 'string', 'in:Masculino,Feminino,Unissex'],
             'case_shape' => ['required', 'string', 'max:255'],
             'movement_type' => ['required', 'string', 'max:255'],
             'module_caliber_movement_number' => ['required', 'string', 'max:255'],

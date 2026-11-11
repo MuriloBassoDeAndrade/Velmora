@@ -20,7 +20,6 @@ class ProductTest extends TestCase
             'brand' => 'Velmora',
             'price' => 1299.90,
             'stock' => 10,
-            'image_url' => 'https://exemplo.com/relogio.jpg',
             'active' => true,
             'category_id' => $this->createCategory()->id,
             'characteristics_id' => $this->createCharacteristic()->id,
@@ -133,6 +132,32 @@ class ProductTest extends TestCase
         $this->assertDatabaseHas('products', ['name' => 'Velmora Classic', 'stock' => 10]);
     }
 
+    public function test_admin_can_create_product_with_characteristics(): void
+    {
+        $this->actingAsAdmin();
+        $payload = $this->productPayload();
+        unset($payload['characteristics_id']);
+        $payload['characteristics'] = $this->characteristicData(['gender' => 'Feminino']);
+
+        $this->postJson('/api/products', $payload)
+            ->assertCreated()
+            ->assertJsonPath('data.characteristics.gender', 'Feminino');
+
+        $this->assertDatabaseHas('characteristics', ['gender' => 'Feminino']);
+    }
+
+    public function test_product_characteristics_reject_unsupported_gender(): void
+    {
+        $this->actingAsAdmin();
+        $payload = $this->productPayload();
+        unset($payload['characteristics_id']);
+        $payload['characteristics'] = $this->characteristicData(['gender' => 'Outro']);
+
+        $this->postJson('/api/products', $payload)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['characteristics.gender']);
+    }
+
     public function test_store_validates_required_fields(): void
     {
         $this->actingAsAdmin();
@@ -151,7 +176,7 @@ class ProductTest extends TestCase
         $this->postJson('/api/products', $this->productPayload([
             'price' => -1,
             'stock' => -5,
-            'image_url' => 'não-é-url',
+            'image_url' => 'https://exemplo.com/relogio.jpg',
             'category_id' => 9999,
             'characteristics_id' => 9999,
         ]))->assertStatus(422)->assertJsonValidationErrors([
@@ -170,6 +195,40 @@ class ProductTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.name', 'Novo')
             ->assertJsonPath('data.stock', 3);
+    }
+
+    public function test_admin_can_update_product_characteristics(): void
+    {
+        $this->actingAsAdmin();
+        $product = $this->createProduct();
+        $characteristicId = $product->characteristics_id;
+
+        $this->putJson("/api/products/{$product->id}", [
+            'characteristics' => $this->characteristicData(['gender' => 'Feminino']),
+        ])->assertOk()->assertJsonPath('data.characteristics.gender', 'Feminino');
+
+        $this->assertDatabaseHas('characteristics', ['id' => $characteristicId, 'gender' => 'Feminino']);
+        $this->assertDatabaseCount('characteristics', 1);
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'characteristics_id' => $characteristicId]);
+    }
+
+    public function test_updating_shared_product_characteristics_creates_a_separate_record(): void
+    {
+        $this->actingAsAdmin();
+        $characteristic = $this->createCharacteristic();
+        $product = $this->createProduct(['characteristics_id' => $characteristic->id]);
+        $otherProduct = $this->createProduct(['characteristics_id' => $characteristic->id]);
+
+        $response = $this->putJson("/api/products/{$product->id}", [
+            'characteristics' => $this->characteristicData(['gender' => 'Feminino']),
+        ])->assertOk()->assertJsonPath('data.characteristics.gender', 'Feminino');
+        $newCharacteristicId = $response->json('data.characteristics.id');
+
+        $this->assertDatabaseHas('characteristics', ['id' => $characteristic->id, 'gender' => 'Masculino']);
+        $this->assertDatabaseHas('products', ['id' => $otherProduct->id, 'characteristics_id' => $characteristic->id]);
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'characteristics_id' => $newCharacteristicId]);
+        $this->assertNotSame($characteristic->id, $newCharacteristicId);
+        $this->assertDatabaseCount('characteristics', 2);
     }
 
     public function test_admin_can_deactivate_product_and_it_leaves_public_listing(): void
@@ -197,8 +256,11 @@ class ProductTest extends TestCase
         $this->actingAsAdmin();
         $product = $this->createProduct();
 
-        $this->putJson("/api/products/{$product->id}", ['price' => 'abc', 'stock' => -1])
-            ->assertStatus(422)->assertJsonValidationErrors(['price', 'stock']);
+        $this->putJson("/api/products/{$product->id}", [
+            'price' => 'abc',
+            'stock' => -1,
+            'image_url' => 'https://exemplo.com/relogio.jpg',
+        ])->assertStatus(422)->assertJsonValidationErrors(['price', 'stock', 'image_url']);
     }
 
     public function test_update_missing_product_returns_404(): void
@@ -242,11 +304,11 @@ class ProductTest extends TestCase
     {
         Storage::fake('public');
         $this->actingAsAdmin();
-
-        $response = $this->post('/api/products', $this->productPayload([
-            'image_url' => null,
+        $payload = $this->productPayload([
             'image' => UploadedFile::fake()->create('velmora-watch.jpg', 100, 'image/jpeg'),
-        ]));
+        ]);
+
+        $response = $this->post('/api/products', $payload);
 
         $response->assertCreated();
         $imageUrl = $response->json('data.image_url');

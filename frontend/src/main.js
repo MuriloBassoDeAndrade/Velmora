@@ -37,7 +37,6 @@ const toastNode = document.getElementById("toast");
 let currentUser = null;
 let cart = null;
 let categories = [];
-let characteristics = [];
 let toastTimer;
 
 const unwrap = (payload) => payload?.data ?? payload;
@@ -135,8 +134,6 @@ const context = {
   get cart() { return cart; },
   get categories() { return categories; },
   set categories(value) { categories = value; },
-  get characteristics() { return characteristics; },
-  set characteristics(value) { characteristics = value; },
   app, cartDialog, accountDialog, cartContent, accountContent,
   get toastNode() { return toastNode; },
   money, esc, unwrap, notify, loading, errorPage, currentPath, navigate,
@@ -194,6 +191,22 @@ async function addProductToCart(form, button) {
 }
 
 document.addEventListener("click", async (event) => {
+  const adminTab = event.target.closest(".admin-tabs a[href^='#admin-']");
+  if (adminTab) {
+    const section = document.getElementById(adminTab.hash.slice(1));
+    if (section) {
+      event.preventDefault();
+      history.pushState({}, "", adminTab.hash);
+      document.querySelectorAll(".admin-tabs a").forEach((tab) => {
+        const selected = tab === adminTab;
+        tab.classList.toggle("is-active", selected);
+        if (selected) tab.setAttribute("aria-current", "location");
+        else tab.removeAttribute("aria-current");
+      });
+      section.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    return;
+  }
   const link = event.target.closest("a[data-link]");
   if (link && link.origin === location.origin) {
     event.preventDefault();
@@ -225,11 +238,23 @@ document.addEventListener("click", async (event) => {
   const authMode = event.target.closest("[data-auth-mode]");
   if (authMode) renderAuthForm(authMode.dataset.authMode);
   if (event.target.closest("[data-clear-filters]")) navigate("/");
-  const pageButton = event.target.closest("button[data-page]");
+  const pageButton = event.target.closest("button[data-page]:not([data-admin-page])");
   if (pageButton) {
     const params = new URLSearchParams(location.search);
     params.set("page", pageButton.dataset.page);
     navigate("/?" + params.toString());
+  }
+  const adminPageButton = event.target.closest("button[data-admin-page]");
+  if (adminPageButton && !adminPageButton.disabled) {
+    const section = adminPageButton.dataset.adminPage;
+    const page = Number(adminPageButton.dataset.page);
+    if (!Number.isInteger(page) || page < 1) return;
+    const params = new URLSearchParams(location.search);
+    params.set("admin_" + section + "_page", String(page));
+    history.pushState({}, "", location.pathname + "?" + params.toString() + "#admin-" + section);
+    await renderAdmin();
+    document.getElementById("admin-" + section)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
   }
   const addButton = event.target.closest("[data-add-product]");
   if (addButton) {
@@ -384,14 +409,46 @@ app.addEventListener("submit", async (event) => {
       notify("Estoque atualizado.");
     } else if (formId === "adminOrderFilter") {
       const status = new FormData(form).get("status");
-      const payload = await adminApi.listAdminOrders(status ? { status } : {});
-      const rows = payload.data || [];
-      const tbody = document.querySelector("#admin-orders tbody");
-      if (tbody) tbody.innerHTML = rows.map((o) => '<tr><td>#' + o.id + '</td><td>' + esc(o.user?.name || o.user?.email || "Cliente") + '</td><td>' + new Date(o.created_at).toLocaleDateString("pt-BR") + '</td><td>' + money(o.total) + '</td><td>' + statusLabel(o.status) + '</td><td>' + (o.status === "paid" ? '<button class="text-link" data-order-status="' + o.id + '" data-next-status="shipped">Marcar enviado</button>' : o.status === "shipped" ? '<button class="text-link" data-order-status="' + o.id + '" data-next-status="delivered">Marcar entregue</button>' : "—") + '</td></tr>').join("");
+      const params = new URLSearchParams(location.search);
+      if (status) params.set("admin_order_status", status);
+      else params.delete("admin_order_status");
+      params.delete("admin_orders_page");
+      const query = params.toString();
+      history.pushState({}, "", location.pathname + (query ? "?" + query : "") + "#admin-orders");
+      await renderAdmin();
+      document.getElementById("admin-orders")?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   } catch (error) { notify(error.message, "error"); }
 });
 window.addEventListener("popstate", renderRoute);
+
+app.addEventListener("change", (event) => {
+  const input = event.target;
+  if (!input.matches('#adminProductForm input[name="image"]')) return;
+
+  const file = input.files?.[0];
+  if (!file) return;
+
+  const preview = document.querySelector("[data-product-image-preview]");
+  if (!preview) return;
+
+  const image = document.createElement("img");
+  const objectUrl = URL.createObjectURL(file);
+  image.className = "admin-product-preview-image";
+  image.alt = "Prévia da imagem selecionada";
+  image.dataset.previewUrl = objectUrl;
+  image.onload = () => {
+    URL.revokeObjectURL(objectUrl);
+    delete image.dataset.previewUrl;
+  };
+  image.onerror = () => {
+    URL.revokeObjectURL(objectUrl);
+    delete image.dataset.previewUrl;
+    notify("Não foi possível carregar a prévia da imagem selecionada.", "error");
+  };
+  image.src = objectUrl;
+  preview.replaceChildren(image);
+});
 
 async function initializeApp() {
   await restoreSession();

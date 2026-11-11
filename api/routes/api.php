@@ -11,6 +11,8 @@ use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 
+Route::get('/health', fn () => response()->json(['status' => 'ok']));
+
 // Authentication routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
