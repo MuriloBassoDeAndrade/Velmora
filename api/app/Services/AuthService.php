@@ -7,10 +7,6 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 
-/**
- * Autenticação por sessão (cookie) com Laravel Sanctum no modo SPA.
- * O navegador recebe o cookie de sessão; nenhum token é devolvido no corpo.
- */
 class AuthService
 {
     public function register(array $data): User

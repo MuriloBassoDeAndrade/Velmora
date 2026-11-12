@@ -8,7 +8,6 @@ export default defineConfig(({ mode }) => {
     target: apiTarget,
     changeOrigin: true,
     configure(proxy) {
-      // Sanctum is configured for localhost without Vite's port in this project.
       proxy.on('proxyReq', (proxyRequest, request) => {
         const origin = request.headers.origin
         if (origin) {

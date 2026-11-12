@@ -26,7 +26,6 @@ class ProductTest extends TestCase
         ], $overrides);
     }
 
-    // ---------- Público ----------
 
     public function test_index_lists_only_active_products_ordered_by_name(): void
     {
@@ -78,7 +77,6 @@ class ProductTest extends TestCase
         $this->getJson("/api/products/{$product->id}")->assertNotFound();
     }
 
-    // ---------- Rotas admin de leitura ----------
 
     public function test_admin_index_requires_admin(): void
     {
@@ -107,7 +105,6 @@ class ProductTest extends TestCase
             ->assertJsonPath('data.active', false);
     }
 
-    // ---------- Criação ----------
 
     public function test_store_requires_admin(): void
     {
@@ -184,7 +181,6 @@ class ProductTest extends TestCase
         ]);
     }
 
-    // ---------- Atualização ----------
 
     public function test_admin_can_partially_update_product(): void
     {
@@ -270,7 +266,6 @@ class ProductTest extends TestCase
         $this->putJson('/api/products/9999', ['name' => 'X'])->assertNotFound();
     }
 
-    // ---------- Exclusão ----------
 
     public function test_admin_can_soft_delete_product(): void
     {

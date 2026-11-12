@@ -29,7 +29,6 @@ class MoneyTest extends TestCase
 
     public function test_multiplication_is_exact(): void
     {
-        // 0.1 * 3 em float dá 0.30000000000000004
         $this->assertSame(30, Money::multiply('0.10', 3));
         $this->assertSame('59.97', Money::format(Money::multiply('19.99', 3)));
     }

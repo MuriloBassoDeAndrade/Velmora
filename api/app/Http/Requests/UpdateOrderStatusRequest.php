@@ -15,7 +15,6 @@ class UpdateOrderStatusRequest extends FormRequest
 
     public function rules(): array
     {
-        // "paid" só acontece pelo pagamento do cliente (POST /orders/{id}/pay).
         return [
             'status' => ['required', 'string', Rule::in([
                 Order::STATUS_SHIPPED,

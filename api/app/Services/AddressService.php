@@ -31,7 +31,6 @@ class AddressService
     {
         $address = $user->addresses()->findOrFail($id);
 
-        // O pedido guarda o endereço usado, então ele não pode sumir.
         if ($address->orders()->exists()) {
             throw ValidationException::withMessages([
                 'address' => 'Address is used by an order and cannot be deleted.',

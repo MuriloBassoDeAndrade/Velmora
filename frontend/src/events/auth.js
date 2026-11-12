@@ -36,7 +36,9 @@ export function registerAuthEvents(ctx) {
     const data = formDataToObject(form);
     try {
       const isRegister = Boolean(data.name);
-      const payload = await (isRegister ? ctx.authApi.register(data) : ctx.authApi.login(data));
+      const payload = await (isRegister
+        ? ctx.authApi.register(data)
+        : ctx.authApi.login(data));
       await ctx.finishLogin(payload);
     } catch (error) {
       ctx.notify(error.message, "error");

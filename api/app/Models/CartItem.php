@@ -31,9 +31,6 @@ class CartItem extends Model
         return $this->belongsTo(Product::class)->withTrashed();
     }
 
-    /**
-     * Item indisponível: produto removido, inativo ou sem estoque.
-     */
     public function isUnavailable(): bool
     {
         $product = $this->product;
@@ -44,9 +41,6 @@ class CartItem extends Model
             || $product->stock <= 0;
     }
 
-    /**
-     * Subtotal em centavos. Item indisponível vale 0 (não entra no total).
-     */
     public function subtotalCents(): int
     {
         if ($this->isUnavailable()) {
@@ -56,9 +50,6 @@ class CartItem extends Model
         return Money::multiply($this->product->price, $this->quantity);
     }
 
-    /**
-     * Item disponível, mas com quantidade acima do estoque atual.
-     */
     public function exceedsStock(): bool
     {
         return !$this->isUnavailable()

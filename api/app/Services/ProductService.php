@@ -21,8 +21,6 @@ class ProductService
             ->where('active', true);
 
         if (!empty($filters['search'])) {
-            // Escapa % e _ (curingas do LIKE) para a busca ser literal.
-            // O caractere de escape "!" funciona igual no MySQL e no SQLite.
             $term = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], (string) $filters['search']);
 
             $query->whereRaw("name LIKE ? ESCAPE '!'", ['%' . $term . '%']);
@@ -182,7 +180,7 @@ class ProductService
 
         return substr($path, strlen('/storage/'));
     }
-    
+
     public function delete(int $id): void
     {
     $product = $this->getByIdAdmin($id);
@@ -190,10 +188,6 @@ class ProductService
     $product->delete();
     }
 
-    /**
-     * Define o estoque de um produto (inclusive inativo). Usa lock para não
-     * competir com um pedido sendo criado ao mesmo tempo.
-     */
     public function updateStock(int $id, int $stock, ?int $adminId = null): Product
     {
         $product = DB::transaction(function () use ($id, $stock) {

@@ -4,12 +4,6 @@ namespace App\Support;
 
 use InvalidArgumentException;
 
-/**
- * Operações com dinheiro em centavos (inteiros), sem ponto flutuante.
- *
- * O banco guarda decimal(10,2). Aqui convertemos o texto "999.90" para 99990
- * centavos, fazemos as contas com inteiros e formatamos de volta para "999.90".
- */
 final class Money
 {
     public static function toCents(string|int $amount): int

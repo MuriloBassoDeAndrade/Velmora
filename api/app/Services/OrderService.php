@@ -17,7 +17,6 @@ use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 class OrderService
 {
-    /** Frete fixo de R$ 29,90 (mesmo valor usado pelo OrderSeeder). */
     public const SHIPPING_CENTS = 2990;
 
     private const PER_PAGE = 10;
@@ -30,7 +29,6 @@ class OrderService
         Order::STATUS_CANCELLED,
     ];
 
-    /** Transições válidas de status. Qualquer outra retorna 409. */
     private const TRANSITIONS = [
         Order::STATUS_PENDING_PAYMENT => [Order::STATUS_PAID, Order::STATUS_CANCELLED],
         Order::STATUS_PAID => [Order::STATUS_SHIPPED],
@@ -39,10 +37,6 @@ class OrderService
         Order::STATUS_CANCELLED => [],
     ];
 
-    /**
-     * Cria o pedido a partir do carrinho. Tudo em uma transação: se qualquer
-     * item falhar, nada é gravado (nem pedido, nem baixa de estoque).
-     */
     public function createFromCart(User $user, int $addressId): Order
     {
         return DB::transaction(function () use ($user, $addressId) {
@@ -60,7 +54,6 @@ class OrderService
                 ->lockForUpdate()
                 ->first();
 
-            // Ordem fixa por produto evita deadlock entre pedidos concorrentes.
             $cartItems = $cart
                 ? $cart->items()->orderBy('product_id')->get()
                 : collect();
@@ -109,7 +102,6 @@ class OrderService
             ]);
 
             foreach ($lines as [$product, $quantity]) {
-                // Preço e nome ficam congelados no item do pedido.
                 $order->items()->create([
                     'product_id' => $product->id,
                     'product_name' => $product->name,
@@ -150,7 +142,7 @@ class OrderService
             ->withQueryString();
     }
 
-    /** Dono do pedido ou admin. Outro usuário recebe 403. */
+
     public function findForUser(User $user, int $id): Order
     {
         $order = Order::query()
@@ -162,7 +154,7 @@ class OrderService
         return $order;
     }
 
-    /** Pagamento simulado: somente o dono do pedido (nem o admin) paga. */
+
     public function pay(User $user, int $id): Order
     {
         return DB::transaction(function () use ($user, $id) {
@@ -176,7 +168,7 @@ class OrderService
         }, 3);
     }
 
-    /** Dono ou admin; só vale enquanto aguarda pagamento e devolve o estoque. */
+
     public function cancel(User $user, int $id): Order
     {
         return DB::transaction(function () use ($user, $id) {
@@ -188,7 +180,7 @@ class OrderService
         }, 3);
     }
 
-    /** Uso do admin: avançar o status respeitando as transições válidas. */
+
     public function updateStatus(int $id, string $newStatus, ?int $adminId = null): Order
     {
         $fromStatus = null;

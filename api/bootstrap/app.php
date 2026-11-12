@@ -20,9 +20,6 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        // Toda resposta de erro da API segue o mesmo formato JSON:
-        //   { "message": "..." }                       (401, 403, 404, 409, ...)
-        //   { "message": "...", "errors": { ... } }    (422)
         $isApi = fn (Request $request) => $request->is('api/*') || $request->expectsJson();
 
         $exceptions->shouldRenderJsonWhen(
@@ -44,8 +41,6 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
-        // Cobre 403 (AccessDeniedHttpException e AuthorizationException),
-        // 404 (rota ou model inexistente), 409 (transição de status inválida) etc.
         $exceptions->render(function (HttpExceptionInterface $e, Request $request) use ($isApi) {
             if (!$isApi($request)) {
                 return null;
@@ -54,7 +49,6 @@ return Application::configure(basePath: dirname(__DIR__))
             $status = $e->getStatusCode();
 
             $message = match (true) {
-                // Não vaza o nome do model ("No query results for model ...").
                 $status === 404 => 'Resource not found.',
                 $status === 403 && ($e->getMessage() === '' || $e->getMessage() === 'This action is unauthorized.') => 'Forbidden.',
                 $e->getMessage() !== '' => $e->getMessage(),

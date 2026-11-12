@@ -30,7 +30,6 @@ class CatalogTest extends TestCase
         $this->createProduct(['name' => 'Relógio_Sport']);
         $this->createProduct(['name' => 'Relógio Clássico']);
 
-        // "%" não pode virar curinga: só o produto que tem "%" no nome aparece.
         $this->assertSame(['Relógio 100% Aço'], $this->names('/api/products?search=' . urlencode('%')));
         $this->assertSame(['Relógio_Sport'], $this->names('/api/products?search=' . urlencode('_')));
         $this->assertSame(['Relógio_Sport'], $this->names('/api/products?search=' . urlencode('o_S')));

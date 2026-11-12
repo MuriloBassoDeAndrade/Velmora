@@ -10,11 +10,6 @@ use Illuminate\Support\Str;
 use Tests\Concerns\CreatesCatalog;
 use Tests\TestCase;
 
-/**
- * Autenticação por cookie (sessão do Sanctum). Todas as requisições de login,
- * registro e logout precisam vir do frontend (Origin/Referer), por isso o
- * helper fromFrontend().
- */
 class AuthTest extends TestCase
 {
     use RefreshDatabase, CreatesCatalog;
@@ -136,7 +131,6 @@ class AuthTest extends TestCase
             ->postJson('/api/login', ['email' => 'cliente@teste.com', 'password' => 'senha-segura-123'])
             ->assertOk();
 
-        // 3 + 3 = 6, limitado ao estoque (4), com aviso ao usuário.
         $response->assertJsonPath('cart.user_id', $user->id)
             ->assertJsonPath('cart.items.0.quantity', 4)
             ->assertJsonPath('adjustments.0.final_quantity', 4)
@@ -180,7 +174,7 @@ class AuthTest extends TestCase
     {
         $this->getJson('/api/user')->assertUnauthorized();
 
-        /** @var User $user */
+
         $user = User::factory()->create();
 
         $this->actingAs($user)->getJson('/api/user')
@@ -191,7 +185,7 @@ class AuthTest extends TestCase
 
     public function test_user_can_update_profile_and_change_password(): void
     {
-        /** @var User $user */
+
         $user = User::factory()->create([
             'name' => 'Nome antigo',
             'email' => 'cliente@teste.com',
@@ -214,7 +208,7 @@ class AuthTest extends TestCase
 
     public function test_user_cannot_change_password_with_wrong_current_password(): void
     {
-        /** @var User $user */
+
         $user = User::factory()->create(['password' => 'senha-antiga-123']);
 
         $this->actingAs($user)->putJson('/api/user', [
@@ -229,7 +223,7 @@ class AuthTest extends TestCase
 
     public function test_logout_ends_the_session(): void
     {
-        /** @var User $user */
+
         $user = User::factory()->create();
 
         $this->actingAs($user, 'web')->fromFrontend()

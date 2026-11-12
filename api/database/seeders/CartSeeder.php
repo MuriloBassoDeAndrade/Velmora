@@ -27,7 +27,7 @@ class CartSeeder extends Seeder
         );
         CartItem::updateOrCreate(
             ['cart_id' => $guestCart->id, 'product_id' => $products[0]->id],
-             ['quantity' => 1]
+            ['quantity' => 1]
         );
         CartItem::updateOrCreate(
             ['cart_id' => $guestCart->id, 'product_id' => $products[1]->id],
@@ -41,7 +41,7 @@ class CartSeeder extends Seeder
             ['user_id' => $ana->id],
             ['guest_token' => null]
         );
-        
+
         CartItem::updateOrCreate(
             ['cart_id' => $userCart->id, 'product_id' => $products[0]->id],
             ['quantity' => 2]

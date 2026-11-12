@@ -11,7 +11,7 @@ class OrderTest extends TestCase
 {
     use RefreshDatabase, CreatesCatalog;
 
-    /** Cria um cliente com endereço e um pedido pendente de 2 x R$ 10,10. */
+
     private function pendingOrder(): array
     {
         $user = $this->createCustomer();
@@ -27,7 +27,6 @@ class OrderTest extends TestCase
         return [$user, Order::query()->findOrFail($id), $product, $address];
     }
 
-    // ---------- Checkout ----------
 
     public function test_checkout_requires_authentication(): void
     {
@@ -102,7 +101,6 @@ class OrderTest extends TestCase
 
         $this->assertStringContainsString('Produto Curto', $response->json('errors.items.0'));
 
-        // Transação: nada foi gravado e o estoque do outro produto não mudou.
         $this->assertDatabaseCount('orders', 0);
         $this->assertDatabaseCount('order_items', 0);
         $this->assertSame(5, $fine->fresh()->stock);
@@ -123,7 +121,6 @@ class OrderTest extends TestCase
         $this->assertStringContainsString('Desativado', $response->json('errors.items.0'));
     }
 
-    // ---------- Meus pedidos ----------
 
     public function test_user_lists_only_own_orders(): void
     {
@@ -159,7 +156,6 @@ class OrderTest extends TestCase
         $this->actingAs($this->createCustomer())->getJson('/api/orders/9999')->assertNotFound();
     }
 
-    // ---------- Pagamento simulado ----------
 
     public function test_owner_can_pay_and_payment_is_recorded(): void
     {
@@ -194,7 +190,6 @@ class OrderTest extends TestCase
         $this->assertDatabaseCount('payments', 1);
     }
 
-    // ---------- Cancelamento ----------
 
     public function test_owner_cancels_pending_order_and_stock_is_returned(): void
     {

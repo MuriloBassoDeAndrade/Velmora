@@ -23,9 +23,6 @@ class Cart extends Model
         return $this->hasMany(CartItem::class);
     }
 
-    /**
-     * Total do carrinho em centavos. Itens indisponíveis não entram na soma.
-     */
     public function totalCents(): int
     {
         return $this->items->sum(fn (CartItem $item) => $item->subtotalCents());

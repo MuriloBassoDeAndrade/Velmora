@@ -56,11 +56,6 @@ class CartService
             ->firstOrFail();
     }
 
-    /**
-     * Funde o carrinho de visitante (identificado pelo token) ao carrinho do usuário.
-     * Usado no login/registro: token ausente, inválido ou desconhecido é ignorado
-     * e não impede a autenticação.
-     */
     public function mergeGuestCartFromToken(User $user, ?string $guestToken): ?array
     {
         if ($guestToken === null || !Str::isUuid($guestToken)) {
@@ -98,7 +93,7 @@ class CartService
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            
+
 
             $lockedProduct = Product::withTrashed()
                 ->whereKey($productId)

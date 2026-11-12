@@ -14,12 +14,10 @@ class CartResource extends JsonResource
             'id' => $this->id,
             'user_id' => $this->user_id,
             'items' => CartItemResource::collection($this->whenLoaded('items')),
-            // Itens indisponíveis (inativos ou sem estoque) não entram no total.
             'total' => Money::format($this->totalCents()),
             'has_unavailable_items' => $this->items->contains(
                 fn ($item) => $item->isUnavailable()
             ),
-            // O total inclui esses itens, mas o checkout vai recusá-los.
             'has_items_exceeding_stock' => $this->items->contains(
                 fn ($item) => $item->exceedsStock()
             ),

@@ -12,7 +12,6 @@ class CharacteristicSeeder extends Seeder
     {
         $characteristics = [
 
-    // 1 - Casio LTP-1183A-7A
     1 => [
         'gender' => 'Feminino',
         'case_shape' => 'Redonda',
@@ -38,7 +37,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => '14 mm',
     ],
 
-    // 2 - Casio LTP-V002D-7B
     2 => [
         'gender' => 'Feminino',
         'case_shape' => 'Redonda',
@@ -64,7 +62,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => 'Não informado',
     ],
 
-    // 3 - Casio MTP-V002D-7B
     3 => [
         'gender' => 'Masculino',
         'case_shape' => 'Redonda',
@@ -90,7 +87,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => 'Não informado',
     ],
 
-    // 4 - Casio MTP-V006L-7B
     4 => [
         'gender' => 'Masculino',
         'case_shape' => 'Redonda',
@@ -116,7 +112,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => 'Não informado',
     ],
 
-    // 5 - Tissot PRX T137.410.11.041.00
     5 => [
         'gender' => 'Masculino',
         'case_shape' => 'Redonda',
@@ -142,7 +137,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => '12 mm',
     ],
 
-    // 6 - Orient Bambino RA-AC0M09E
     6 => [
         'gender' => 'Masculino',
         'case_shape' => 'Redonda',
@@ -168,7 +162,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => '20 mm',
     ],
 
-    // 7 - Timex Weekender T2N651
     7 => [
         'gender' => 'Unissex',
         'case_shape' => 'Redonda',
@@ -194,7 +187,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => '20 mm',
     ],
 
-    // 8 - Timex Expedition Scout T49961
     8 => [
         'gender' => 'Masculino',
         'case_shape' => 'Redonda',
@@ -220,7 +212,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => '20 mm',
     ],
 
-    // 9 - Citizen Chandler BM8180-03E
     9 => [
         'gender' => 'Masculino',
         'case_shape' => 'Redonda',
@@ -246,7 +237,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => '18 mm',
     ],
 
-    // 10 - Seiko 5 Sports SRPE53
     10 => [
         'gender' => 'Masculino',
         'case_shape' => 'Redonda',
@@ -272,7 +262,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => '20 mm',
     ],
 
-    // 11 - Seiko 5 Sports SRPE55
     11 => [
         'gender' => 'Masculino',
         'case_shape' => 'Redonda',
@@ -298,7 +287,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => '20 mm',
     ],
 
-    // 12 - Casio Edifice EFV-100D-1AV
     12 => [
         'gender' => 'Masculino',
         'case_shape' => 'Redonda',
@@ -324,7 +312,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => 'Não informado',
     ],
 
-    // 13 - Casio G-Shock GA-2100-1A
     13 => [
         'gender' => 'Masculino',
         'case_shape' => 'Redonda',
@@ -350,7 +337,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => 'Não informado',
     ],
 
-    // 14 - Casio G-Shock DW-5600UE-1
     14 => [
         'gender' => 'Masculino',
         'case_shape' => 'Redonda',
@@ -376,7 +362,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => 'Não informado',
     ],
 
-    // 15 - Casio G-Shock GA-100-1A1
     15 => [
         'gender' => 'Masculino',
         'case_shape' => 'Redonda',
@@ -402,7 +387,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => 'Não informado',
     ],
 
-    // 16 - Casio G-Shock DW-6900-1VH
     16 => [
         'gender' => 'Masculino',
         'case_shape' => 'Redonda',
@@ -428,7 +412,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => 'Não informado',
     ],
 
-    // 17 - Seiko 5 Sports SRPD53K1
     17 => [
         'gender' => 'Masculino',
         'case_shape' => 'Redonda',
@@ -454,7 +437,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => '22 mm',
     ],
 
-    // 18 - Seiko Prospex SRPD29
     18 => [
         'gender' => 'Masculino',
         'case_shape' => 'Redonda',
@@ -480,7 +462,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => '20 mm',
     ],
 
-    // 19 - Citizen Promaster BN0150-28E
     19 => [
         'gender' => 'Masculino',
         'case_shape' => 'Redonda',
@@ -506,7 +487,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => '20 mm',
     ],
 
-    // 20 - Orient Diver RA-AA0004E
     20 => [
         'gender' => 'Masculino',
         'case_shape' => 'Redonda',
@@ -532,7 +512,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => 'Não informado',
     ],
 
-    // 21 - Casio Duro MDV-107-1A3
     21 => [
         'gender' => 'Masculino',
         'case_shape' => 'Redonda',
@@ -558,7 +537,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => '22 mm',
     ],
 
-    // 22 - Seiko 5 Sports SRPE57
     22 => [
         'gender' => 'Masculino',
         'case_shape' => 'Redonda',
@@ -584,7 +562,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => '20 mm',
     ],
 
-    // 23 - Tissot PRX T137.410.11.401.00
     23 => [
         'gender' => 'Masculino',
         'case_shape' => 'Redonda',
@@ -610,7 +587,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => '12 mm',
     ],
 
-    // 24 - Casio Duro MDV-106-1A
     24 => [
         'gender' => 'Masculino',
         'case_shape' => 'Redonda',
@@ -636,7 +612,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => '22 mm',
     ],
 
-    // 25 - Seiko 5 Sports SRPD55K1
     25 => [
         'gender' => 'Masculino',
         'case_shape' => 'Redonda',
@@ -662,7 +637,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => '22 mm',
     ],
 
-    // 26 - Orient Bambino Version 4 FAC08003A0
     26 => [
         'gender' => 'Masculino',
         'case_shape' => 'Redonda',
@@ -688,7 +662,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => '22 mm',
     ],
 
-    // 27 - Tissot PRX Powermatic 80 40 mm T137.407.11.041.00
     27 => [
         'gender' => 'Masculino',
         'case_shape' => 'Redonda, com bracelete integrado à caixa',
@@ -714,7 +687,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => '12 mm',
     ],
 
-    // 28 - Tissot PRX Powermatic 80 35 mm T137.207.11.041.00
     28 => [
         'gender' => 'Feminino',
         'case_shape' => 'Redonda, com bracelete integrado à caixa',
@@ -740,7 +712,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => '12 mm',
     ],
 
-    // 29 - Casio Vintage LA680WGA-1B
     29 => [
         'gender' => 'Feminino',
         'case_shape' => 'Retangular com cantos chanfrados (octogonal)',
@@ -766,7 +737,6 @@ class CharacteristicSeeder extends Seeder
         'strap_lug_width' => '14 mm',
     ],
 
-    // 30 - Casio LTP-V007D-7E
     30 => [
         'gender' => 'Feminino',
         'case_shape' => 'Retangular',

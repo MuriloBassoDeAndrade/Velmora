@@ -24,7 +24,9 @@ export function clearGuestToken() {
 
 export function readCookie(name) {
   const prefix = name + "=";
-  const item = document.cookie.split("; ").find((part) => part.startsWith(prefix));
+  const item = document.cookie
+    .split("; ")
+    .find((part) => part.startsWith(prefix));
   return item ? decodeURIComponent(item.slice(prefix.length)) : null;
 }
 
@@ -51,13 +53,15 @@ http.interceptors.response.use(
   },
   (error) => {
     const payload = error.response?.data;
-    const details = payload?.errors ? Object.values(payload.errors).flat().join(" ") : "";
-    error.message = details || payload?.message || error.message || "A solicitação falhou.";
+    const details = payload?.errors
+      ? Object.values(payload.errors).flat().join(" ")
+      : "";
+    error.message =
+      details || payload?.message || error.message || "A solicitação falhou.";
     return Promise.reject(error);
   },
 );
 
-// Compatibilidade com o formato usado pelo controlador atual do frontend.
 export async function api(path, options = {}) {
   const headers = { ...(options.headers || {}) };
   if (options.body && !(options.body instanceof FormData)) {

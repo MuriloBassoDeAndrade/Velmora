@@ -73,10 +73,6 @@ class AuthController extends Controller
         return response()->json($user, 200);
     }
 
-    /**
-     * Resposta de login/registro. Se o frontend enviou X-Guest-Token, o carrinho
-     * de visitante é fundido ao carrinho da conta e o resultado vai junto.
-     */
     private function authResponse(Request $request, User $user, int $status): JsonResponse
     {
         $merge = $this->cartService->mergeGuestCartFromToken(

@@ -60,7 +60,6 @@ class CartTotalsTest extends TestCase
         $product = $this->createProduct(['price' => '10.00', 'stock' => 5]);
         $this->addToCart($user, $product, 4);
 
-        // O estoque cai depois de o item entrar no carrinho.
         $product->update(['stock' => 2]);
 
         $this->actingAs($user)->getJson('/api/cart')

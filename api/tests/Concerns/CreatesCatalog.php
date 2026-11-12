@@ -127,7 +127,7 @@ trait CreatesCatalog
         return User::factory()->create();
     }
 
-    /** Cabeçalho que faz o Sanctum tratar a requisição como vinda do frontend (cookie/sessão). */
+
     protected function fromFrontend(): static
     {
         return $this->withHeader('Referer', 'http://localhost');

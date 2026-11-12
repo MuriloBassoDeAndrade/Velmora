@@ -7,10 +7,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\CreatesCatalog;
 use Tests\TestCase;
 
-/**
- * Formato único de erro da API: { "message": "..." } e, no 422,
- * { "message": "...", "errors": { campo: [...] } }.
- */
 class ErrorFormatTest extends TestCase
 {
     use RefreshDatabase, CreatesCatalog;

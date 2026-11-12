@@ -19,7 +19,6 @@ class StoreAddressRequest extends FormRequest
             $merge['state'] = strtoupper(trim($this->state));
         }
 
-        // Aceita 12345678 ou 12345-678 e guarda sempre como 12345-678.
         if (is_string($this->cep) && preg_match('/^\d{5}-?\d{3}$/', trim($this->cep))) {
             $digits = str_replace('-', '', trim($this->cep));
             $merge['cep'] = substr($digits, 0, 5) . '-' . substr($digits, 5);

@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\AuthController;
@@ -21,9 +20,11 @@ Route::get('/user', [AuthController::class, 'me'])->middleware('auth:sanctum');
 Route::put('/user', [AuthController::class, 'updateProfile'])->middleware('auth:sanctum');
 
 // Product routes
+
 Route::apiResource('products', ProductController::class)
     ->only(['index', 'show'])
     ->parameters(['products' => 'id']);
+
 Route::get('/admin/products', [ProductController::class, 'indexAdmin'])
     ->middleware(['auth:sanctum', 'admin']);
 Route::get('/admin/products/{id}', [ProductController::class, 'showAdmin'])
@@ -34,18 +35,22 @@ Route::apiResource('products', ProductController::class)
     ->middleware(['auth:sanctum', 'admin']);
 
 // Category routes
+
 Route::apiResource('categories', CategoryController::class)
     ->only(['index', 'show'])
     ->parameters(['categories' => 'id']);
+
 Route::apiResource('categories', CategoryController::class)
     ->except(['index', 'show'])
     ->parameters(['categories' => 'id'])
     ->middleware(['auth:sanctum', 'admin']);
 
 // Characteristic routes
+
 Route::apiResource('characteristics', CharacteristicController::class)
     ->only(['index', 'show'])
     ->parameters(['characteristics' => 'id']);
+
 Route::apiResource('characteristics', CharacteristicController::class)
     ->except(['index', 'show'])
     ->parameters(['characteristics' => 'id'])

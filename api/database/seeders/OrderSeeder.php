@@ -20,7 +20,6 @@ class OrderSeeder extends Seeder
     {
         DB::transaction(function () {
 
-            // Busca e agrupa os endereços por usuário.
             $addresses = Address::orderBy('id')
                 ->get()
                 ->groupBy('user_id')
@@ -74,11 +73,9 @@ class OrderSeeder extends Seeder
 
             foreach ($orders as $data) {
 
-                // Busca o cliente.
                 $user = User::where('email', $data['customer_email'])
                     ->firstOrFail();
 
-                // Busca os endereços daquele cliente.
                 $userAddresses = $addresses->get($user->id);
 
                 if (!$userAddresses || !$userAddresses->has($data['address_index'])) {
@@ -87,7 +84,6 @@ class OrderSeeder extends Seeder
 
                 $address = $userAddresses->get($data['address_index']);
 
-                // Busca os produtos solicitados.
                 $productNames = collect($data['items'])
                     ->pluck(0)
                     ->unique()
@@ -101,7 +97,6 @@ class OrderSeeder extends Seeder
                 $selectedItems = [];
                 $subtotalCents = 0;
 
-                // Valida todos os itens antes de criar o pedido.
                 foreach ($data['items'] as [$productName, $quantity]) {
 
                     $product = $products->get($productName);
@@ -127,14 +122,12 @@ class OrderSeeder extends Seeder
                     $subtotalCents += $unitPriceCents * $quantity;
                 }
 
-                // Não cria pedidos incompletos.
                 if (empty($selectedItems)) {
                     continue;
                 }
 
                 $totalCents = $subtotalCents + self::SHIPPING_CENTS;
 
-                // Cria o pedido.
                 $order = Order::create([
                     'user_id' => $user->id,
                     'address_id' => $address->id,
@@ -144,7 +137,6 @@ class OrderSeeder extends Seeder
                     'total' => Money::format($totalCents),
                 ]);
 
-                // Cria os itens e atualiza o estoque.
                 foreach ($selectedItems as $item) {
 
                     $product = $item['product'];
@@ -163,7 +155,6 @@ class OrderSeeder extends Seeder
                     }
                 }
 
-                // Cria pagamento para pedidos pagos.
                 if (in_array($data['status'], [
                     Order::STATUS_PAID,
                     Order::STATUS_SHIPPED,

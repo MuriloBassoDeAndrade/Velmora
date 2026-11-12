@@ -26,9 +26,7 @@ class CartItemResource extends JsonResource
                 'active' => $product->active,
             ] : null,
 
-            // Produto removido, inativo ou sem estoque.
             'unavailable' => $this->isUnavailable(),
-            // Disponível, mas a quantidade do carrinho passa do estoque atual.
             'exceeds_stock' => $this->exceedsStock(),
         ];
     }
