@@ -12,7 +12,10 @@ export function registerOrderEvents(ctx) {
     }
 
     const cancel = event.target.closest("[data-cancel-order]");
-    if (cancel && confirm("Deseja cancelar este pedido? O estoque será devolvido.")) {
+    if (
+      cancel &&
+      confirm("Deseja cancelar este pedido? O estoque será devolvido.")
+    ) {
       try {
         await ctx.ordersApi.cancelOrder(cancel.dataset.cancelOrder);
         ctx.notify("Pedido cancelado.");

@@ -1,5 +1,12 @@
 export async function openCart(ctx) {
-  const { loadCart, cartContent, cartItem, money, cartDialog, updateCartCount } = ctx;
+  const {
+    loadCart,
+    cartContent,
+    cartItem,
+    money,
+    cartDialog,
+    updateCartCount,
+  } = ctx;
   await loadCart();
   const cart = ctx.cart;
   const items = cart?.items || [];

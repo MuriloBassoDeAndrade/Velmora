@@ -1,5 +1,22 @@
 export async function renderRoute(ctx) {
-  const { currentPath, app, renderAuthForm, renderRegister, renderProducts, renderNotFound, accountDialog, renderHome, renderProduct, openCart, openCheckout, renderOrders, renderOrder, renderProfile, renderAdmin, errorPage } = ctx;
+  const {
+    currentPath,
+    app,
+    renderAuthForm,
+    renderRegister,
+    renderProducts,
+    renderNotFound,
+    accountDialog,
+    renderHome,
+    renderProduct,
+    openCart,
+    openCheckout,
+    renderOrders,
+    renderOrder,
+    renderProfile,
+    renderAdmin,
+    errorPage,
+  } = ctx;
   const path = currentPath();
   const isDocumentPage = path.startsWith("/pages/");
   const entryPage = isDocumentPage ? document.body.dataset.page : null;
@@ -10,14 +27,27 @@ export async function renderRoute(ctx) {
     const filter = link.dataset.navFilter;
     const active = filter
       ? params.get(filter) === link.dataset.navValue
-      : target === "/" ? (isDocumentPage
-        ? entryPage === "home" || entryPage === "products" || entryPage === "product"
-        : path === "/" || path.startsWith("/produto/")) && !params.has("gender") && params.get("new") !== "1"
-        : target === "/pedidos" ? (isDocumentPage
-          ? entryPage === "orders" || entryPage === "order"
-          : path === "/pedidos" || path.startsWith("/pedido/"))
-          : target === "/perfil" ? (isDocumentPage ? entryPage === "profile" : path === "/perfil")
-            : target === "/admin" ? (isDocumentPage ? entryPage === "admin" : path === "/admin") : false;
+      : target === "/"
+        ? (isDocumentPage
+            ? entryPage === "home" ||
+              entryPage === "products" ||
+              entryPage === "product"
+            : path === "/" || path.startsWith("/produto/")) &&
+          !params.has("gender") &&
+          params.get("new") !== "1"
+        : target === "/pedidos"
+          ? isDocumentPage
+            ? entryPage === "orders" || entryPage === "order"
+            : path === "/pedidos" || path.startsWith("/pedido/")
+          : target === "/perfil"
+            ? isDocumentPage
+              ? entryPage === "profile"
+              : path === "/perfil"
+            : target === "/admin"
+              ? isDocumentPage
+                ? entryPage === "admin"
+                : path === "/admin"
+              : false;
     link.classList.toggle("is-active", active);
     if (active) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");
@@ -29,18 +59,24 @@ export async function renderRoute(ctx) {
     if (!accountDialog.open) accountDialog.showModal();
     return;
   }
-  if (entryPage === "home") return renderHome(new URLSearchParams(location.search));
-  if (entryPage === "products") return renderProducts(new URLSearchParams(location.search));
+  if (entryPage === "home")
+    return renderHome(new URLSearchParams(location.search));
+  if (entryPage === "products")
+    return renderProducts(new URLSearchParams(location.search));
   if (entryPage === "product") {
     const id = new URLSearchParams(location.search).get("id");
-    return id ? renderProduct(id) : errorPage(new Error("Informe o ID do produto na URL."));
+    return id
+      ? renderProduct(id)
+      : errorPage(new Error("Informe o ID do produto na URL."));
   }
   if (entryPage === "cart") return openCart();
   if (entryPage === "checkout") return openCheckout();
   if (entryPage === "orders") return renderOrders();
   if (entryPage === "order") {
     const id = new URLSearchParams(location.search).get("id");
-    return id ? renderOrder(id) : errorPage(new Error("Informe o ID do pedido na URL."));
+    return id
+      ? renderOrder(id)
+      : errorPage(new Error("Informe o ID do pedido na URL."));
   }
   if (entryPage === "profile") return renderProfile();
   if (entryPage === "admin") return renderAdmin();

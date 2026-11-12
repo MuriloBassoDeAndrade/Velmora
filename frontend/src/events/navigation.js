@@ -44,7 +44,9 @@ export function registerNavigationEvents(ctx) {
       return;
     }
 
-    const pageButton = event.target.closest("button[data-page]:not([data-admin-page])");
+    const pageButton = event.target.closest(
+      "button[data-page]:not([data-admin-page])",
+    );
     if (pageButton) {
       const params = new URLSearchParams(location.search);
       params.set("page", pageButton.dataset.page);
@@ -58,9 +60,15 @@ export function registerNavigationEvents(ctx) {
       if (!Number.isInteger(page) || page < 1) return;
       const params = new URLSearchParams(location.search);
       params.set("admin_" + section + "_page", String(page));
-      history.pushState({}, "", location.pathname + "?" + params.toString() + "#admin-" + section);
+      history.pushState(
+        {},
+        "",
+        location.pathname + "?" + params.toString() + "#admin-" + section,
+      );
       await ctx.renderAdmin();
-      document.getElementById("admin-" + section)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      document
+        .getElementById("admin-" + section)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   });
 
@@ -70,7 +78,9 @@ export function registerNavigationEvents(ctx) {
     event.preventDefault();
     const data = formDataToObject(form);
     const params = new URLSearchParams();
-    Object.entries(data).forEach(([key, value]) => { if (value) params.set(key, value); });
+    Object.entries(data).forEach(([key, value]) => {
+      if (value) params.set(key, value);
+    });
     ctx.navigate("/" + (params.toString() ? "?" + params.toString() : ""));
   });
 

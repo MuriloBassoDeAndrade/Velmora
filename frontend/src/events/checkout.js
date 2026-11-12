@@ -11,10 +11,14 @@ export function registerCheckoutEvents(ctx) {
       if (!addressId) {
         const addressData = { ...data };
         delete addressData.address_id;
-        const address = ctx.unwrap(await ctx.addressesApi.createAddress(addressData));
+        const address = ctx.unwrap(
+          await ctx.addressesApi.createAddress(addressData),
+        );
         addressId = address.id;
       }
-      const order = ctx.unwrap(await ctx.ordersApi.createOrder({ address_id: Number(addressId) }));
+      const order = ctx.unwrap(
+        await ctx.ordersApi.createOrder({ address_id: Number(addressId) }),
+      );
       document.getElementById("checkoutDialog").close();
       await ctx.loadCart();
       ctx.notify("Pedido criado. Confirme o pagamento simulado.");

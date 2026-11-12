@@ -4,10 +4,12 @@ async function addProductToCart(form, button, ctx) {
   button.disabled = true;
   try {
     const data = formDataToObject(form);
-    ctx.cart = ctx.unwrap(await ctx.cartApi.addCartItem({
-      product_id: Number(data.product_id),
-      quantity: Number(data.quantity),
-    }));
+    ctx.cart = ctx.unwrap(
+      await ctx.cartApi.addCartItem({
+        product_id: Number(data.product_id),
+        quantity: Number(data.quantity),
+      }),
+    );
     ctx.updateCartCount();
     await ctx.openCart();
     ctx.notify("Produto adicionado ao carrinho.");
@@ -49,11 +51,17 @@ export function registerCartEvents(ctx) {
     const item = ctx.cart?.items?.find((row) => String(row.id) === id);
     if (!item) return;
     const action = cartAction.dataset.cartChange;
-    const quantity = action === "plus" ? item.quantity + 1 : action === "minus" ? item.quantity - 1 : 0;
+    const quantity =
+      action === "plus"
+        ? item.quantity + 1
+        : action === "minus"
+          ? item.quantity - 1
+          : 0;
     try {
-      const result = action === "remove" || quantity < 1
-        ? await ctx.cartApi.removeCartItem(id)
-        : await ctx.cartApi.updateCartItem(id, { quantity });
+      const result =
+        action === "remove" || quantity < 1
+          ? await ctx.cartApi.removeCartItem(id)
+          : await ctx.cartApi.updateCartItem(id, { quantity });
       ctx.cart = ctx.unwrap(result);
       await ctx.openCart();
       ctx.updateCartCount();
