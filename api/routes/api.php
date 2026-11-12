@@ -25,7 +25,7 @@ Route::apiResource('products', ProductController::class)
     ->only(['index', 'show'])
     ->parameters(['products' => 'id']);
 
-Route::get('/admin/products', [ProductController::class, 'indexAdmin'])
+Route::get('/admin/products', [ProductController::class, 'indexAdmin']) 
     ->middleware(['auth:sanctum', 'admin']);
 Route::get('/admin/products/{id}', [ProductController::class, 'showAdmin'])
     ->middleware(['auth:sanctum', 'admin']);
